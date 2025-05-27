@@ -9,47 +9,23 @@ import tensorflow_probability.substrates.jax as tfp
 from tqdm import tqdm
 import anesthetic
 from desidr2 import logl_desidr2
-import cpl
+import lcdm
 from blackjax.ns.utils import finalise
 from jax.scipy.special import logsumexp
 tfd = tfp.distributions
 
 rng_key = jax.random.PRNGKey(1729)
 
-h0rd_prior = tfd.Uniform(1000, 100_000)  # 1/99_000
-omegam_prior = tfd.Uniform(0.01, 0.99)  # 1/0.98
-w0_prior = tfd.Uniform(-3.0, 1.0)  # 1/4
-wa_prior = tfd.Uniform(-3.0, 2.0)  # 1/5
+h0rd_prior = tfd.Uniform(1000, 100_000)
+omegam_prior = tfd.Uniform(0.01, 0.99)
 
-cuboid_prior = tfd.JointDistributionNamed(dict(
+prior = tfd.JointDistributionNamed(dict(
     h0rd=h0rd_prior,
     omegam=omegam_prior,
-    w0=w0_prior,
-    wa=wa_prior,
 ))
-
-
-logv = jnp.log((20-9/2) * (0.99-0.01) * (100_000 - 100))
-
-
-def log_prob(x):
-    # return -logv if within the prior bounds, else -inf
-    return jnp.where(x['w0'] + x['wa'] < 1,
-                     cuboid_prior.log_prob(x) + jnp.log(20/(20-9/2)),
-                     -jnp.inf)
-
-
-# NOTE: do not use this for the prior probabilities, as normalization is fucked
-prior_sample_generator = tfd.JointDistributionNamed(dict(
-    h0rd=h0rd_prior,
-    omegam=omegam_prior,
-    w0=w0_prior,
-    wa=lambda w0: tfd.Uniform(-3.0, jnp.minimum(2.0, 1-w0))
-))
-
 
 test_sample, ravel_fn = jax.flatten_util.ravel_pytree(
-    prior_sample_generator.sample(seed=jax.random.PRNGKey(0))
+    prior.sample(seed=jax.random.PRNGKey(0))
 )
 
 # %%
@@ -58,8 +34,8 @@ n_delete = nlive // 2
 rng_key, init_key = jax.random.split(rng_key, 2)
 
 ns = blackjax.ns.adaptive.nss(
-    logprior_fn=log_prob,
-    loglikelihood_fn=lambda x: logl_desidr2(x, cpl),
+    logprior_fn=prior.log_prob,
+    loglikelihood_fn=lambda x: logl_desidr2(x, lcdm),
     n_delete=n_delete,
     num_mcmc_steps=4*3,
     ravel_fn=ravel_fn,
@@ -70,19 +46,19 @@ dead = []
 
 nmonaco = 100_000
 monaco = logsumexp(
-    jax.vmap(lambda x: logl_desidr2(x, cpl))(prior_sample_generator.sample(seed=rng_key, sample_shape=(nmonaco,)))
+    jax.vmap(lambda x: logl_desidr2(x, lcdm))(prior.sample(seed=rng_key, sample_shape=(nmonaco,)))
 ) - jnp.log(nmonaco)
 print(f"logZ = {monaco}")
 
 
 def integrate(ns, rng_key):
     rng_key, init_key = jax.random.split(rng_key, 2)
-    particles = prior_sample_generator.sample(seed=init_key, sample_shape=(nlive,))
+    particles = prior.sample(seed=init_key, sample_shape=(nlive,))
     print(particles)
-    prior_values = jax.vmap(log_prob)(particles)
+    prior_values = jax.vmap(prior.log_prob)(particles)
     print(f"{prior_values=}")
 
-    logl = jax.vmap(lambda x: logl_desidr2(x, cpl))(particles)
+    logl = jax.vmap(lambda x: logl_desidr2(x, lcdm))(particles)
     print(f"{logl=}")
 
     state = ns.init(particles, logl)
@@ -130,7 +106,7 @@ samples = anesthetic.NestedSamples(
     columns=[l[0] for l in labels],
     labels=labels_map,
 )
-samples.to_csv("chains/cpl.csv")
+samples.to_csv("chains/lcdm.csv")
 print(samples)
 
 print(f"sampler logZ = {state.sampler_state.logZ:.2f}")
