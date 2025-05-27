@@ -150,6 +150,7 @@ samples = anesthetic.NestedSamples(
 samples.to_csv("chains/cpl.csv")
 print(samples)
 
-print(f"log Z = {state.sampler_state.logZ}")
+print(f"sampler logZ = {state.sampler_state.logZ}")
 
+print(f"anesthetic logZ = {samples.logZ()}")
 # %%
