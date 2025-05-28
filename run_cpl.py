@@ -64,7 +64,6 @@ samples = nested_sampling(lambda x: logl_desidr2(x, cpl), log_prob, nlive,
                           logl_samples, ravel_fn)
 
 print(f"anesthetic logZ = {samples.logZ():.2f} = {samples.logL_P():.2f} - {samples.D_KL():.2f}")
-print(f"anesthetic logZ = {samples.logZ():.2f}")
 
 # %%
 nmonaco = 100_000
