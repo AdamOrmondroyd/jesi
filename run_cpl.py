@@ -25,12 +25,12 @@ cuboid_prior = tfd.JointDistributionNamed(dict(
 ))
 
 
-logv = jnp.log((20-9/2) * (0.99-0.01) * (100_000 - 100))
+logv = jnp.log((20-9/2) * (0.99-0.01) * (100_000 - 1_000))
 
 
 def log_prob(x):
     # return -logv if within the prior bounds, else -inf
-    return jnp.where(x['w0'] + x['wa'] < 1,
+    return jnp.where(x['w0'] + x['wa'] < 0,
                      cuboid_prior.log_prob(x) + jnp.log(20/(20-9/2)),
                      -jnp.inf)
 
@@ -40,7 +40,7 @@ prior_sample_generator = tfd.JointDistributionNamed(dict(
     h0rd=h0rd_prior,
     omegam=omegam_prior,
     w0=w0_prior,
-    wa=lambda w0: tfd.Uniform(-3.0, jnp.minimum(2.0, 1-w0))
+    wa=lambda w0: tfd.Uniform(-3.0, jnp.minimum(2.0, -w0))
 ))
 
 
