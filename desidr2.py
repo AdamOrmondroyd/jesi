@@ -2,9 +2,9 @@ import numpy as np
 import jax.numpy as jnp
 from pandas import read_csv
 
-data = read_csv("../distances/desi3/desi3_mean.txt",
+data = read_csv("desidr2/desidr2_mean.txt",
                 header=None, index_col=None, sep=r"\s+", comment="#")
-cov = np.loadtxt("../distances/desi3/desi3_cov.txt")
+cov = np.loadtxt("desidr2/desidr2_cov.txt")
 
 zs = jnp.array(data.iloc[:, 0].to_numpy())
 mean = data.iloc[:, 1].to_numpy()
