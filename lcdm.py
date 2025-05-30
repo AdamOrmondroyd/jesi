@@ -22,7 +22,6 @@ def dh_over_rs(z, h0rd, omegam):
 
 
 def dm_over_rs(z, h0rd, omegam, resolution=1000):
-
     _z = linspace(0, z, resolution, axis=-1)
     _one_over_h = one_over_h(_z, omegam[..., None])
     return c / h0rd * trapezoid(_one_over_h, _z, axis=-1)
