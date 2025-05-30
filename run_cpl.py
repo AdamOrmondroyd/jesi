@@ -11,6 +11,7 @@ from jax.scipy.special import logsumexp
 tfd = tfp.distributions
 
 rng_key = jax.random.PRNGKey(1729)
+os.makedirs("chains", exist_ok=True)
 
 h0rd_prior = tfd.Uniform(1000, 100_000)  # 1/99_000
 omegam_prior = tfd.Uniform(0.01, 0.99)  # 1/0.98
@@ -61,7 +62,7 @@ labels = [("h0rd", r"H_0r_\mathrm{d}"), (r"Omegam", r"\Omega_\mathrm{m}"),
 
 samples = nested_sampling(lambda x: logl_desidr2(x, cpl), log_prob, nlive,
                           rng_key, "chains/cpl", labels, prior_samples,
-                          logl_samples, ravel_fn)
+                          logl_samples)
 
 print(f"anesthetic logZ = {samples.logZ():.2f} = {samples.logL_P():.2f} - {samples.D_KL():.2f}")
 
