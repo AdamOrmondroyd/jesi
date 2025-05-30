@@ -8,7 +8,7 @@ c = c/1000
 
 def one_over_h(z, omegam):
     """
-    H(z) / H0
+    1/(H(z) / H0)
     """
     return rsqrt(
         omegam * (1 + z)**3

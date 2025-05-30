@@ -12,7 +12,7 @@ def cpl_f_de(z, w0, wa):
 
 def one_over_h(z, omegam, f_de):
     """
-    H(z) / H0
+    1/(H(z) / H0)
     """
     return rsqrt(
         omegam * (1 + z)**3
