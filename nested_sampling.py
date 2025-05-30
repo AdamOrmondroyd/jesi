@@ -15,23 +15,21 @@ from jax.scipy.special import logsumexp
 
 def nested_sampling(log_likelihood, log_prior, nlive, rng_key, filename,
                     labels, prior_samples, logl_samples,
-                    ravel_fn=None,
                     ):
     n_delete = nlive // 2
     dead = []
 
-    ns = blackjax.ns.adaptive.nss(
+    ns = blackjax.nss(
         logprior_fn=log_prior,
         loglikelihood_fn=log_likelihood,
-        n_delete=n_delete,
-        num_mcmc_steps=4*3,
-        ravel_fn=ravel_fn,
+        num_delete=n_delete,
+        num_inner_steps=4*3,
     )
 
     def integrate(ns, rng_key):
         rng_key, init_key = jax.random.split(rng_key, 2)
 
-        state = ns.init(prior_samples, logl_samples)
+        state = ns.init(prior_samples)
 
         @jax.jit
         def one_step(carry, xs):
@@ -42,7 +40,7 @@ def nested_sampling(log_likelihood, log_prior, nlive, rng_key, filename,
 
         one_step((state, rng_key), None)
         with tqdm(desc="Dead points", unit=" dead points") as pbar:
-            while (not state.sampler_state.logZ_live - state.sampler_state.logZ < -3):
+            while (not state.logZ_live - state.logZ < -3):
                 (state, rng_key), dead_info = one_step((state, rng_key), None)
                 dead.append(dead_info)
                 pbar.update(n_delete)
@@ -50,7 +48,7 @@ def nested_sampling(log_likelihood, log_prior, nlive, rng_key, filename,
         return state, finalise(state, dead)
 
     state, final = integrate(ns, rng_key)
-    print(f"sampler logZ = {state.sampler_state.logZ:.2f}")
+    print(f"sampler logZ = {state.logZ:.2f}")
 
     theta = np.vstack([*final.particles.values()]).T
 
@@ -58,10 +56,11 @@ def nested_sampling(log_likelihood, log_prior, nlive, rng_key, filename,
 
     samples = anesthetic.NestedSamples(
         data=theta,
-        logL=final.logL,
-        logL_birth=final.logL_birth,
+        logL=final.loglikelihood,
+        logL_birth=final.loglikelihood_birth,
         columns=[l[0] for l in labels],
         labels=labels_map,
     )
+
     samples.to_csv(f"{filename}.csv")
     return samples
