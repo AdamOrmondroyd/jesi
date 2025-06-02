@@ -44,11 +44,7 @@ prior_sample_generator = tfd.JointDistributionNamed(dict(
     wa=lambda w0: tfd.Uniform(-3.0, jnp.minimum(2.0, -w0))
 ))
 
-
-test_sample, ravel_fn = jax.flatten_util.ravel_pytree(
-    prior_sample_generator.sample(seed=jax.random.PRNGKey(0))
-)
-
+# %%
 nlive = 5000
 
 rng_key, init_key = jax.random.split(rng_key, 2)

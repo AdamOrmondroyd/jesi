@@ -21,10 +21,6 @@ prior = tfd.JointDistributionNamed(dict(
     omegam=omegam_prior,
 ))
 
-test_sample, ravel_fn = jax.flatten_util.ravel_pytree(
-    prior.sample(seed=jax.random.PRNGKey(0))
-)
-
 # %%
 nlive = 5000
 
