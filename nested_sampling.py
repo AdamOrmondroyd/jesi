@@ -27,8 +27,6 @@ def nested_sampling(log_likelihood, log_prior, nlive, rng_key, filename,
     )
 
     def integrate(ns, rng_key):
-        rng_key, init_key = jax.random.split(rng_key, 2)
-
         state = ns.init(prior_samples)
 
         @jax.jit
