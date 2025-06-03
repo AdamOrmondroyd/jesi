@@ -2,15 +2,10 @@ import os; os.environ["JAX_PLATFORM_NAME"] = "cpu"
 from jax import config; config.update("jax_enable_x64", False)
 import numpy as np
 import jax
-import jax.numpy as jnp
 import blackjax
-import tensorflow_probability.substrates.jax as tfp
 from tqdm import tqdm
 import anesthetic
-from desidr2 import logl_desidr2
-import cpl
 from blackjax.ns.utils import finalise
-from jax.scipy.special import logsumexp
 
 
 def nested_sampling(log_likelihood, log_prior, nlive, rng_key, filename,
@@ -48,12 +43,10 @@ def nested_sampling(log_likelihood, log_prior, nlive, rng_key, filename,
     state, final = integrate(ns, rng_key)
     print(f"sampler logZ = {state.logZ:.2f}")
 
-    theta = np.vstack([*final.particles.values()]).T
-
     labels_map = {l[0]: f'${l[1]}$' for l in labels}
 
     samples = anesthetic.NestedSamples(
-        data=theta,
+        data=final.particles,
         logL=final.loglikelihood,
         logL_birth=final.loglikelihood_birth,
         columns=[l[0] for l in labels],
