@@ -1,14 +1,12 @@
 import os; os.environ["JAX_PLATFORM_NAME"] = "cpu"
 from jax import config; config.update("jax_enable_x64", False)
 import jax
-import tensorflow_probability.substrates.jax as tfp
+from tensorflow_probability.substrates.jax import distributions as tfd
 import blackjax
 from blackjax.ns.utils import finalise
 from jax.scipy.stats import norm
 from tqdm import tqdm
 
-
-tfd = tfp.distributions
 
 rng_key = jax.random.PRNGKey(1729)
 os.makedirs("chains", exist_ok=True)
@@ -44,7 +42,7 @@ def nested_sampling(log_likelihood, log_prior, nlive, rng_key,
         logprior_fn=log_prior,
         loglikelihood_fn=log_likelihood,
         num_delete=n_delete,
-        num_inner_steps=4*3,
+        num_inner_steps=8,
     )
 
     def integrate(ns, rng_key):
@@ -70,6 +68,6 @@ def nested_sampling(log_likelihood, log_prior, nlive, rng_key,
     print(f"sampler logZ = {state.logZ:.2f}")
 
 
-samples = nested_sampling(
+nested_sampling(
     logl, prior.log_prob, nlive, rng_key,
     prior_samples, logl_samples)
