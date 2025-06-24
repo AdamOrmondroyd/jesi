@@ -15,7 +15,7 @@ w0_prior = tfd.Uniform(-3.0, 1.0)  # 1/4
 wa_prior = tfd.Uniform(-3.0, 2.0)  # 1/5
 
 
-def nested_sampling(log_likelihood, log_prior, prior_samples, logl_samples,
+def nested_sampling(log_likelihood, log_prior, logl_samples, prior_samples,
                     nlive, filename, labels, rng_key,
                     ):
     n_delete = nlive // 2

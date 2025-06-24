@@ -15,6 +15,6 @@ def logl(x):
     return logl_desidr2(x, cpl) + logl_pantheonplus(x, cpl)
 
 
-samples = sample_cpl(logl, 500, rng_key, "dp_cpl")
+samples = sample_cpl(logl, 500, "dp_cpl", rng_key)
 
 print(f"anesthetic logZ = {samples.logZ():.2f} = {samples.logL_P():.2f} - {samples.D_KL():.2f}")
