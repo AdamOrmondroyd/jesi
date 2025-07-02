@@ -33,6 +33,7 @@ if __name__ == "__main__":
     logl_values = jax.vmap(lambda x: logl_pantheonplus(x, lcdm))(prior_samples)
     print(logl_values)
 
-    nested_sampling(lambda x: logl_pantheonplus(x, lcdm), prior.log_prob, nlive, rng_key,
-                    "chains/pantheonplus", [("omegam", r"\Omega_\mathrm{m}")],
-                    prior_samples, logl_values)
+    nested_sampling(lambda x: logl_pantheonplus(x, lcdm), prior.log_prob,
+                    prior_samples, logl_values,
+                    nlive, "chains/pantheonplus",
+                    [("omegam", r"\Omega_\mathrm{m}")], rng_key)
