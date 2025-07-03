@@ -1,6 +1,5 @@
 from functools import partial
-from jax.lax import rsqrt
-from jax.numpy import exp, linspace, trapezoid
+from jax.numpy import exp
 from cosmology import (
     one_over_h,
     int_one_over_h,
