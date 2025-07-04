@@ -1,5 +1,3 @@
-import os; os.environ["JAX_PLATFORM_NAME"] = "cpu"
-from jax import config; config.update("jax_enable_x64", False)
 import jax
 from numpy import loadtxt
 import jax.numpy as jnp
