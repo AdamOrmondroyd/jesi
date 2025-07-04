@@ -67,7 +67,7 @@ def nested_sampling(log_likelihood, log_prior, logl_samples, prior_samples,
     )
 
     samples.to_csv(f"{filename}.csv")
-    return samples
+    return samples, final
 
 
 def sample_lcdm(logl, nlive, filename, rng_key):
