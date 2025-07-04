@@ -5,11 +5,11 @@ from cosmology import (
     dh_over_rs,
     dm_over_rs,
     dv_over_rs,
-    h0_dl_over_c
+    h0_dl_over_c,
 )
 
 
-def f_de(z): return 1.0
+def f_de(z, params): return 1.0
 
 
 one_over_h = partial(one_over_h, f_de)

@@ -16,7 +16,7 @@ wa_prior = tfd.Uniform(-3.0, 2.0)  # 1/5
 
 
 def nested_sampling(log_likelihood, log_prior, logl_samples, prior_samples,
-                    nlive, filename, labels, rng_key,
+                    nlive, filename, labels, rng_key, **nss_kwargs,
                     ):
     n_delete = nlive // 2
     dead = []
@@ -26,6 +26,7 @@ def nested_sampling(log_likelihood, log_prior, logl_samples, prior_samples,
         loglikelihood_fn=log_likelihood,
         num_delete=n_delete,
         num_inner_steps=3*len(labels),
+        **nss_kwargs,
     )
 
     def integrate(ns, rng_key):
