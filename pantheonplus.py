@@ -10,7 +10,7 @@ from nested_sampling import nested_sampling
 
 
 # data loading stolen from Toby
-path = Path('../clik_installs/desi/data/sn_data/PantheonPlus')
+path = Path('pantheonplus')
 df = pd.read_table(path/'Pantheon+SH0ES.dat', sep=' ', engine='python')
 cov = loadtxt(path/'Pantheon+SH0ES_STAT+SYS.cov', skiprows=1)
 cov = cov.reshape([-1, int(jnp.sqrt(len(cov)))])

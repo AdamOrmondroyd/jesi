@@ -1,6 +1,6 @@
 import os
 
-if "darwin" == os.uname():
+if "Darwin" == os.uname().sysname:
     os.environ["JAX_PLATFORM_NAME"] = "cpu"
     from jax import config
 
