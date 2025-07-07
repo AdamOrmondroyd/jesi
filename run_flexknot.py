@@ -7,8 +7,7 @@ if "Darwin" == os.uname().sysname:
     config.update("jax_enable_x64", False)
 import sys
 import jax
-from desidr2 import logl_desidr2
-from pantheonplus import logl_pantheonplus
+from likelihoods import desidr2, pantheonplus
 import flexknot
 from nested_sampling import sample_flexknot
 
@@ -20,7 +19,7 @@ os.makedirs("chains", exist_ok=True)
 
 
 def logl(x):
-    return logl_desidr2(x, flexknot) + logl_pantheonplus(x, flexknot)
+    return desidr2(x, flexknot) + pantheonplus(x, flexknot)
 
 
 samples = sample_flexknot(logl, 50, f"chains/dp_flexknot_{n}", rng_key, n=n)
