@@ -68,7 +68,8 @@ def save(final, filename, labels, flatten=None):
     )
 
     samples.to_csv(f"{filename}.csv")
-    print(f"anesthetic logZ = {samples.logZ():.2f} = {samples.logL_P():.2f} - {samples.D_KL():.2f}")
+    print(f"anesthetic logZ = {samples.logZ():.2f} "
+          f"= {samples.logL_P():.2f} - {samples.D_KL():.2f}")
     return samples, final
 
 
