@@ -1,6 +1,5 @@
 from functools import partial
-from jax.numpy import exp
-from cosmology import (
+from cosmology.cosmology import (
     one_over_h,
     int_one_over_h,
     dh_over_rs,
