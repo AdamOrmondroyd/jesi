@@ -78,7 +78,7 @@ def sample_lcdm(logl, nlive, filename, rng_key):
     prior_samples = prior.sample(seed=init_key, sample_shape=(2*nlive,))
     logl_samples = jax.vmap(logl)(prior_samples)
 
-    labels = [("h0rd", r"H_0r_\mathrm{d}"), (r"Omegam", r"\Omega_\mathrm{m}")]
+    labels = [("h0rd", r"H_0r_\mathrm{d}"), (r"omegam", r"\Omega_\mathrm{m}")]
 
     return nested_sampling(
         logl, prior.log_prob, logl_samples,
@@ -99,7 +99,7 @@ def sample_wcdm(logl, nlive, filename, rng_key):
 
     labels = [
         ("h0rd", r"H_0r_\mathrm{d}"),
-        (r"Omegam", r"\Omega_\mathrm{m}"),
+        (r"omegam", r"\Omega_\mathrm{m}"),
         (r"w0", r"w_0"),
     ]
 
