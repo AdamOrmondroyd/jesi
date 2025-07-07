@@ -14,7 +14,7 @@ wa_prior = tfd.Uniform(-3.0, 2.0)  # 1/5
 
 
 def nested_sampling(log_likelihood, log_prior, logl_samples, prior_samples,
-                    nlive, filename, labels, rng_key, flatten=None, **nss_kwargs,
+                    nlive, labels, rng_key, **nss_kwargs,
                     ):
     n_delete = nlive // 2
     dead = []
@@ -48,7 +48,10 @@ def nested_sampling(log_likelihood, log_prior, logl_samples, prior_samples,
 
     state, final = integrate(ns, rng_key)
     print(f"sampler logZ = {state.logZ:.2f}")
+    return final
 
+
+def save(final, filename, labels, flatten=None):
     if flatten is not None:
         particles = flatten(final.particles)
     else:
@@ -80,10 +83,10 @@ def sample_lcdm(logl, nlive, filename, rng_key):
 
     labels = [("h0rd", r"H_0r_\mathrm{d}"), (r"omegam", r"\Omega_\mathrm{m}")]
 
-    return nested_sampling(
+    final = nested_sampling(
         logl, prior.log_prob, logl_samples,
-        prior_samples, nlive,
-        filename, labels, rng_key)
+        prior_samples, nlive, labels, rng_key)
+    return save(final, filename, labels)
 
 
 def sample_wcdm(logl, nlive, filename, rng_key):
@@ -103,10 +106,10 @@ def sample_wcdm(logl, nlive, filename, rng_key):
         (r"w0", r"w_0"),
     ]
 
-    return nested_sampling(
+    final = nested_sampling(
         logl, prior.log_prob, logl_samples,
-        prior_samples, nlive,
-        filename, labels, rng_key)
+        prior_samples, nlive, labels, rng_key)
+    return save(final, filename, labels)
 
 
 def sample_cpl(logl, nlive, filename, rng_key):
@@ -137,10 +140,11 @@ def sample_cpl(logl, nlive, filename, rng_key):
     labels = [("h0rd", r"H_0r_\mathrm{d}"), (r"omegam", r"\Omega_\mathrm{m}"),
               ("w0", r"w_0"), ("wa", r"w_a")]
 
-    return nested_sampling(
+    final = nested_sampling(
         logl, log_prior, logl_samples,
-        prior_samples, nlive,
-        filename, labels, rng_key)
+        prior_samples, nlive, labels, rng_key)
+
+    return save(final, filename, labels)
 
 
 def sample_flexknot(logl, nlive, filename, rng_key, n):
@@ -187,7 +191,7 @@ def sample_flexknot(logl, nlive, filename, rng_key, n):
 
     labels = [
         ("h0rd", r"H_0r_\mathrm{d}"),
-         (r"omegam", r"\Omega_\mathrm{m}")
+        (r"omegam", r"\Omega_\mathrm{m}"),
     ] + [
         (f"a{i}", f"a_{{{i}}}") for i in range(1, n-1)
     ] + [
@@ -211,10 +215,9 @@ def sample_flexknot(logl, nlive, filename, rng_key, n):
                 data_dict[key] = values
         return data_dict
 
-    return nested_sampling(
+    final = nested_sampling(
         logl, prior_fn, logl_samples,
-        prior_samples, nlive,
-        filename, labels, rng_key,
-        flatten=flatten,
+        prior_samples, nlive, labels, rng_key,
         stepper_fn=wrapped_stepper,
     )
+    return save(final, filename, labels, flatten=flatten)
