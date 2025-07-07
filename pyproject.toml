@@ -8,6 +8,7 @@ dependencies = [
     "blackjax",
     "tensorflow-probability>=0.25.0",
     "tqdm>=4.67.1",
+    "fire",
 ]
 
 [tool.uv.sources]
