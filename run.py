@@ -17,7 +17,7 @@ rng_key = jax.random.PRNGKey(1729)
 os.makedirs("chains", exist_ok=True)
 
 
-def main(model_name, *likelihood_names, nlive=500, **kwargs):
+def main(model_name, *likelihood_names, nlive=1000, **kwargs):
     model = getattr(cosmology, model_name)
     sampler = getattr(nested_sampling, f"sample_{model_name}")
     logls = [getattr(likelihoods, name) for name in likelihood_names]
