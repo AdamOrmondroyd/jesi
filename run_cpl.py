@@ -7,7 +7,7 @@ if "Darwin" == os.uname().sysname:
     config.update("jax_enable_x64", False)
 import jax
 from likelihoods import desidr2, pantheonplus
-import cpl
+from cosmology import cpl
 from nested_sampling import sample_cpl
 
 rng_key = jax.random.PRNGKey(1729)

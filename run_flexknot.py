@@ -8,7 +8,7 @@ if "Darwin" == os.uname().sysname:
 import sys
 import jax
 from likelihoods import desidr2, pantheonplus
-import flexknot
+from cosmology import flexknot
 from nested_sampling import sample_flexknot
 
 n = int(sys.argv[1])
