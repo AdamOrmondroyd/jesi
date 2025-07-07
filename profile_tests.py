@@ -1,9 +1,10 @@
 import os
 
-os.environ["JAX_PLATFORM_NAME"] = "cpu"
-from jax import config
+if "Darwin" == os.uname().sysname:
+    os.environ["JAX_PLATFORM_NAME"] = "cpu"
+    from jax import config
 
-config.update("jax_enable_x64", False)
+    config.update("jax_enable_x64", False)
 from jax import numpy as jnp
 import jax
 import blackjax
@@ -19,21 +20,20 @@ w0_prior = tfd.Uniform(-3.0, 1.0)  # 1/4
 wa_prior = tfd.Uniform(-3.0, 2.0)  # 1/5
 
 
-from desidr2 import logl_desidr2
+from likelihoods import desidr2
 
 # from pantheonplus import logl_pantheonplus
-import lcdm
-import cpl
+from cosmology import lcdm, cpl
 
 rng_key = jax.random.PRNGKey(1729)
 os.makedirs("chains", exist_ok=True)
 
 
 # def logl(x):
-#     return logl_desidr2(x, lcdm)  # + logl_pantheonplus(x, lcdm)
+#     return desidr2(x, lcdm)  # + logl_pantheonplus(x, lcdm)
 
 def logl(x):
-    return logl_desidr2(x, cpl)  # + logl_pantheonplus(x, lcdm)
+    return desidr2(x, cpl)  # + logl_pantheonplus(x, lcdm)
 
 nested_samples = sample_cpl(logl, 500, "dp_cpl", rng_key)
 
