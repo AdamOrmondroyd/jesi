@@ -32,14 +32,13 @@ def main(model_name, *likelihood_names, nlive=1000, **kwargs):
     chains_dir = Path("chains") / root
     chains_dir.mkdir(exist_ok=True, parents=True)
 
-    samples = sampler(
+    sampler(
         logl,
         nlive,
         chains_dir / f"{model_name}{kwargs_str}",
         rng_key,
         **kwargs
     )
-    print(f"anesthetic logZ = {samples.logZ():.2f} = {samples.logL_P():.2f} - {samples.D_KL():.2f}")
 
 
 if __name__ == "__main__":
