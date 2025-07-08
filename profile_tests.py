@@ -96,4 +96,4 @@ a.scatter(initial_max, marker='*', c='C2', label="NS max", alpha =0.5)
 a.iloc[-1,  0].legend(loc='lower center', bbox_to_anchor=(len(a)/2, len(a)))
 import matplotlib.pyplot as plt
 plt.tight_layout()
-plt.savefig("max_likelihood.png", dpi=300, bbox_inches='tight')
+plt.savefig("plots/max_likelihood.png", dpi=300, bbox_inches='tight')
