@@ -1,10 +1,3 @@
-import os
-
-if "Darwin" == os.uname().sysname:
-    os.environ["JAX_PLATFORM_NAME"] = "cpu"
-    from jax import config
-
-    config.update("jax_enable_x64", False)
 from numpy import loadtxt, argsort, sqrt, fill_diagonal
 import pandas as pd
 from pathlib import Path
