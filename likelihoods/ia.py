@@ -1,5 +1,6 @@
 from jax.numpy import array, log, log10, ones, pi
 from jax.numpy.linalg import inv, slogdet
+from jax.scipy.special import logsumexp
 from scipy.constants import c
 
 
@@ -42,9 +43,17 @@ class IaLogL:
         y = self._y(params, cosmology)
         capital_y = self.onesigma_times_5_over_log10 @ y
 
-        log_term = (capital_y + 1) * self.log_scale_factor + log(
-            self.h0max**(capital_y + 1)-self.h0min**(capital_y + 1)
-        ) - log(capital_y + 1)
+        n = capital_y + 1
+        log_h0max_n = n * log(self.h0max)
+        log_h0min_n = n * log(self.h0min)
+
+        # Use logsumexp to compute log(h0max^n - h0min^n) stably
+        log_diff = logsumexp(
+            array([log_h0max_n, log_h0min_n]),
+            b=array([1.0, -1.0])
+        )
+
+        log_term = n * self.log_scale_factor + log_diff - log(n)
         result = (
             - y.T @ self.invcov_tilde @ y / 2
             + log_term
