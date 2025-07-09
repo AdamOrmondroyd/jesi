@@ -27,8 +27,9 @@ class IaLogL:
             - log((one.T @ invcov @ one).squeeze())
         ) + log(c / (1e-5 * (h0max - h0min)))
 
-        self.a = 1e-5 * h0min / c
-        self.b = 1e-5 * h0max / c
+        self.h0min = h0min
+        self.h0max = h0max
+        self.log_scale_factor = log(1e-5 / c)
         self.onesigma_times_5_over_log10 = (
             one.T @ self.invcov_tilde * 5 / log(10)
         )
@@ -39,12 +40,13 @@ class IaLogL:
 
     def __call__(self, params, cosmology):
         y = self._y(params, cosmology)
-        capital_y = (self.onesigma_times_5_over_log10 @ y)
+        capital_y = self.onesigma_times_5_over_log10 @ y
+
+        log_term = (capital_y + 1) * self.log_scale_factor + log(
+            self.h0max**(capital_y + 1)-self.h0min**(capital_y + 1)
+        ) - log(capital_y + 1)
         result = (
             - y.T @ self.invcov_tilde @ y / 2
-            + log(
-                    (self.b**(capital_y + 1) - self.a**(capital_y + 1))
-                    / (capital_y + 1)
-                )
+            + log_term
             + self.lognormalisation)
         return result.squeeze()
