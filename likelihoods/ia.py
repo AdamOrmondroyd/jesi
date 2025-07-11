@@ -41,7 +41,8 @@ class IaLogL:
 
     def _y(self, params, cosmology):
         return 5 * log10(
-            cosmology.h0_dl_over_c(self.zhd, self.zhel, params)) - self.mb
+            cosmology.h0_dl_over_c(self.zhd, self.zhel, params)
+        ) - self.mb
 
     def __call__(self, params, cosmology):
         y = self._y(params, cosmology)
