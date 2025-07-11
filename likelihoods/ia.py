@@ -1,5 +1,5 @@
-from jax.numpy import array, log, log10, ones, pi
-from jax.numpy.linalg import inv, slogdet
+from jax.numpy import array, log, log10, ones, pi, eye
+from jax.numpy.linalg import inv, slogdet, solve
 from scipy.constants import c
 
 
@@ -21,13 +21,21 @@ class IaLogL:
         self.cov = array(cov[mask, :][:, mask])
 
         one = ones(len(self.cov))[:, None]
-        invcov = inv(self.cov)
+
+        # Use solve instead of inv for numerical stability
+        invcov_one = solve(self.cov, one)
+        one_T_invcov_one = (one.T @ invcov_one).squeeze()
+
+        # Still need full inverse for invcov_tilde computation
+        invcov = solve(self.cov, eye(len(self.cov)))
+
         self.invcov_tilde = (
-            invcov - invcov @ one @ one.T @ invcov / (one.T @ invcov @ one)
+            invcov - (invcov_one @ invcov_one.T) / one_T_invcov_one
         )
+
         self.lognormalisation = 0.5 * (
             log(2*pi) - slogdet(2 * pi * self.cov)[1]
-            - log((one.T @ invcov @ one).squeeze())
+            - log(one_T_invcov_one)
         ) + log(c / (1e-5 * (h0max - h0min)))
 
         self.h0min = h0min
