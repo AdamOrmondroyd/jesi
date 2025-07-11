@@ -25,9 +25,11 @@ class IaLogL:
         # Use solve instead of inv for numerical stability
         invcov_one = solve(self.cov, one)
         one_T_invcov_one = (one.T @ invcov_one).squeeze()
+        print(f"{one_T_invcov_one.dtype=}")
 
         # Still need full inverse for invcov_tilde computation
         invcov = solve(self.cov, eye(len(self.cov)))
+        print(f"{invcov=}")
 
         self.invcov_tilde = (
             invcov - (invcov_one @ invcov_one.T) / one_T_invcov_one
@@ -41,9 +43,6 @@ class IaLogL:
         self.h0min = h0min
         self.h0max = h0max
         self.log_scale_factor = log(1e-5 / c)
-        self.onesigma_times_5_over_log10 = (
-            one.T @ self.invcov_tilde * 5 / log(10)
-        )
 
     def _y(self, params, cosmology):
         return 5 * log10(
@@ -51,13 +50,10 @@ class IaLogL:
 
     def __call__(self, params, cosmology):
         y = self._y(params, cosmology)
-        capital_y = self.onesigma_times_5_over_log10 @ y
-
-        n = capital_y + 1
 
         log_term = (
-            n * (self.log_scale_factor + log(self.h0max))
-            + log(1 - (self.h0min/self.h0max)**n) - log(n)
+            (self.log_scale_factor + log(self.h0max))
+            + log(1 - (self.h0min/self.h0max))
         )
         result = (
             - y.T @ self.invcov_tilde @ y / 2
