@@ -1,4 +1,4 @@
-from jax.numpy import array, log, log10, ones, pi
+from jax.numpy import array, eye, log, log10, ones, pi
 from jax.numpy.linalg import solve, cholesky
 from scipy.constants import c
 
@@ -6,25 +6,23 @@ from scipy.constants import c
 c = c / 1000.0
 
 
-def stable_constrained_quadratic_form(L, y, v, v_dot_v):
+def fast_constrained_quadratic_form(L_inv, y, v, v_dot_v):
     """
-    Compute -y.T @ C^-1_tilde @ y stably using Cholesky decomposition.
+    Compute -y.T @ C^-1_tilde @ y using precomputed L^-1.
 
     Args:
-        L: Cholesky factor of covariance matrix C (lower triangular)
+        L_inv: precomputed L^-1 matrix
         y: data vector
         v: precomputed L^-1 @ one
         v_dot_v: precomputed v.T @ v
 
     Returns:
-        Quadratic form value computed stably
+        Quadratic form value computed fast
     """
-    # Solve L @ u = y (v is precomputed)
-    u = solve(L, y)
+    # Fast matrix multiplication u = L^-1 @ y
+    u = L_inv @ y
 
     # Compute the constrained quadratic form
-    # This is equivalent to -y.T @ C^-1_tilde @ y where C^-1_tilde
-    # is the constrained inverse with the marginalization over nuisance parameters
     u_dot_u = (u.T @ u).squeeze()
     u_dot_v = (u.T @ v).squeeze()
 
@@ -49,8 +47,11 @@ class IaLogL:
         self.L = cholesky(self.cov)
         self.one = ones(len(self.cov))[:, None]
 
+        # Precompute L^-1 for fast matrix multiplication
+        self.L_inv = solve(self.L, eye(len(self.cov)))
+        
         # Precompute v = L^-1 @ one (constant for all likelihood evaluations)
-        self.v = solve(self.L, self.one)
+        self.v = self.L_inv @ self.one
         self.v_dot_v = (self.v.T @ self.v).squeeze()
         
         # Compute normalization stably using Cholesky factor
@@ -70,8 +71,8 @@ class IaLogL:
     def __call__(self, params, cosmology):
         y = self._y(params, cosmology)
 
-        # Compute constrained quadratic form stably (v and v_dot_v are precomputed)
-        quadratic_form = stable_constrained_quadratic_form(self.L, y, self.v, self.v_dot_v)
+        # Compute constrained quadratic form fast (L_inv, v, v_dot_v precomputed)
+        quadratic_form = fast_constrained_quadratic_form(self.L_inv, y, self.v, self.v_dot_v)
 
         result = quadratic_form / 2 + self.lognormalisation
         return result.squeeze()
