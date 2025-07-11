@@ -3,6 +3,9 @@ from jax.numpy.linalg import inv, slogdet
 from scipy.constants import c
 
 
+c = c / 1000.0
+
+
 class IaLogL:
     def __init__(self, df, cov, mb_column, z_cutoff=0.0,
                  h0min=20, h0max=100):
