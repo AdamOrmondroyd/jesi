@@ -25,11 +25,9 @@ class IaLogL:
         # Use solve instead of inv for numerical stability
         invcov_one = solve(self.cov, one)
         one_T_invcov_one = (one.T @ invcov_one).squeeze()
-        print(f"{one_T_invcov_one.dtype=}")
 
         # Still need full inverse for invcov_tilde computation
         invcov = solve(self.cov, eye(len(self.cov)))
-        print(f"{invcov=}")
 
         self.invcov_tilde = (
             invcov - (invcov_one @ invcov_one.T) / one_T_invcov_one
