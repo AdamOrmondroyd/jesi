@@ -6,28 +6,27 @@ from scipy.constants import c
 c = c / 1000.0
 
 
-def stable_constrained_quadratic_form(L, y, one):
+def stable_constrained_quadratic_form(L, y, v, v_dot_v):
     """
     Compute -y.T @ C^-1_tilde @ y stably using Cholesky decomposition.
 
     Args:
         L: Cholesky factor of covariance matrix C (lower triangular)
         y: data vector
-        one: vector of ones
+        v: precomputed L^-1 @ one
+        v_dot_v: precomputed v.T @ v
 
     Returns:
         Quadratic form value computed stably
     """
-    # Solve L @ u = y and L @ v = one
+    # Solve L @ u = y (v is precomputed)
     u = solve(L, y)
-    v = solve(L, one)
 
     # Compute the constrained quadratic form
     # This is equivalent to -y.T @ C^-1_tilde @ y where C^-1_tilde
     # is the constrained inverse with the marginalization over nuisance parameters
     u_dot_u = (u.T @ u).squeeze()
     u_dot_v = (u.T @ v).squeeze()
-    v_dot_v = (v.T @ v).squeeze()
 
     # Constrained quadratic form: -y.T @ C^-1_tilde @ y
     return -(u_dot_u - u_dot_v**2 / v_dot_v)
@@ -50,9 +49,12 @@ class IaLogL:
         self.L = cholesky(self.cov)
         self.one = ones(len(self.cov))[:, None]
 
+        # Precompute v = L^-1 @ one (constant for all likelihood evaluations)
+        self.v = solve(self.L, self.one)
+        self.v_dot_v = (self.v.T @ self.v).squeeze()
+        
         # Compute normalization stably using Cholesky factor
-        v = solve(self.L, self.one)
-        one_T_invcov_one = (v.T @ v).squeeze()
+        one_T_invcov_one = self.v_dot_v
 
         # Log normalization: -0.5 * [log|2πC| + log(1^T C^-1 1)]
         self.lognormalisation = -0.5 * (
@@ -68,8 +70,8 @@ class IaLogL:
     def __call__(self, params, cosmology):
         y = self._y(params, cosmology)
 
-        # Compute constrained quadratic form stably
-        quadratic_form = stable_constrained_quadratic_form(self.L, y, self.one)
+        # Compute constrained quadratic form stably (v and v_dot_v are precomputed)
+        quadratic_form = stable_constrained_quadratic_form(self.L, y, self.v, self.v_dot_v)
 
         result = quadratic_form / 2 + self.lognormalisation
         return result.squeeze()
