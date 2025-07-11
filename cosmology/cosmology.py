@@ -6,11 +6,25 @@ from scipy.constants import c
 c = c/1000
 
 
+def kahan_cumsum(x):
+    """Kahan summation algorithm for improved numerical precision."""
+    def body_fun(carry, xi):
+        s, c = carry
+        y = xi - c
+        t = s + y
+        c = (t - s) - y
+        return (t, c), t
+
+    init_carry = (x[0], 0.0)
+    _, result = jax.lax.scan(body_fun, init_carry, x[1:])
+    return concatenate([x[:1], result])
+
+
 @jax.jit
 def cumulative_trapezoid(y, x):
     dx = diff(x, axis=-1)
     t = (y[..., :-1] + y[..., 1:]) / 2 * dx
-    return concatenate([zeros_like(y[..., :1]), t.cumsum(axis=-1)], axis=-1)
+    return concatenate([zeros_like(y[..., :1]), kahan_cumsum(t)], axis=-1)
 
 
 def one_over_h(f_de, z, params):
