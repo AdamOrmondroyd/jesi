@@ -1,5 +1,5 @@
 import numpy as np
-from jax.numpy import array, log10
+from jax.numpy import array, log10, einsum
 from scipy.constants import c
 
 
@@ -35,7 +35,7 @@ class IaLogL:
         sign, logdet = np.linalg.slogdet(cov_np)
         self.lognormalisation = -0.5 * (
             logdet                           # log|C|
-            + np.log(2*np.pi) * len(cov_np)  # log(2π)^n
+            + np.log(2*np.pi) * (len(cov_np) - 1)  # log(2π)^(n-1) after marginalization
             + np.log(one_T_invcov_one)       # log(1^T C^-1 1)
         )
 
@@ -47,7 +47,7 @@ class IaLogL:
         y = self._y(params, cosmology)
 
         # Fast quadratic form with precisely computed constrained inverse
-        quadratic_form = -y.T @ self.invcov_tilde @ y
+        quadratic_form = -einsum('i,ij,j', y.squeeze(), self.invcov_tilde, y.squeeze())
 
         result = quadratic_form / 2 + self.lognormalisation
-        return result.squeeze()
+        return result
