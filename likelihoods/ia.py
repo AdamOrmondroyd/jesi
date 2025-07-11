@@ -1,4 +1,3 @@
-import jax.numpy as jnp
 from jax.numpy import array, log, log10, ones, pi, eye
 from jax.numpy.linalg import inv, slogdet, solve
 from scipy.constants import c
@@ -23,24 +22,19 @@ class IaLogL:
 
         one = ones(len(self.cov))[:, None]
 
-        # Use bordered matrix approach with SVD for maximum stability
+        # Use bordered matrix approach for maximum stability
         n = len(self.cov)
         bordered_matrix = jnp.zeros((n+1, n+1))
         bordered_matrix = bordered_matrix.at[:n, :n].set(self.cov)
         bordered_matrix = bordered_matrix.at[n, :n].set(1.0)  # constraint row
         bordered_matrix = bordered_matrix.at[:n, n].set(1.0)  # constraint column
 
-        # Use SVD to solve the bordered system
-        U, s, Vt = jnp.linalg.svd(bordered_matrix)
-        
-        # Threshold small singular values for numerical stability
-        s_thresh = jnp.where(s > 1e-12, 1.0/s, 0.0)
-        
-        # Compute pseudo-inverse using SVD
-        bordered_inv = (Vt.T * s_thresh) @ U.T
-        
+        # Solve the bordered system
+        I_bordered = jnp.eye(n+1)
+        solution = solve(bordered_matrix, I_bordered)
+
         # Extract the constrained inverse (top-left n×n block)
-        self.invcov_tilde = bordered_inv[:n, :n]
+        self.invcov_tilde = solution[:n, :n]
         
         # For normalization, we still need the original computation
         invcov_one = solve(self.cov, one)
