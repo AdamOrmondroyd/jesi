@@ -22,16 +22,23 @@ class IaLogL:
 
         one = ones(len(self.cov))[:, None]
 
-        # Use solve instead of inv for numerical stability
+        # Use bordered matrix approach for maximum stability
+        n = len(self.cov)
+        bordered_matrix = jnp.zeros((n+1, n+1))
+        bordered_matrix = bordered_matrix.at[:n, :n].set(self.cov)
+        bordered_matrix = bordered_matrix.at[n, :n].set(1.0)  # constraint row
+        bordered_matrix = bordered_matrix.at[:n, n].set(1.0)  # constraint column
+
+        # Solve the bordered system
+        I_bordered = jnp.eye(n+1)
+        solution = solve(bordered_matrix, I_bordered)
+
+        # Extract the constrained inverse (top-left n×n block)
+        self.invcov_tilde = solution[:n, :n]
+        
+        # For normalization, we still need the original computation
         invcov_one = solve(self.cov, one)
         one_T_invcov_one = (one.T @ invcov_one).squeeze()
-
-        # Still need full inverse for invcov_tilde computation
-        invcov = solve(self.cov, eye(len(self.cov)))
-
-        self.invcov_tilde = (
-            invcov - (invcov_one @ invcov_one.T) / one_T_invcov_one
-        )
 
         self.lognormalisation = 0.5 * (
             log(2*pi) - slogdet(2 * pi * self.cov)[1]
