@@ -1,5 +1,5 @@
 import numpy as np
-from jax.numpy import array, log10, einsum
+from jax.numpy import array, log, log10, einsum
 from scipy.constants import c
 
 
