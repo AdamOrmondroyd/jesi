@@ -1,5 +1,5 @@
 import numpy as np
-from jax.numpy import array, log, log10, einsum
+from jax.numpy import array, log10, einsum
 from scipy.constants import c
 
 
@@ -87,4 +87,4 @@ class IaLogLUnmarginalised:
         delta = self.delta(params, cosmology)
 
         # add log10 for now to account for Mb prior
-        return -0.5 * delta.T @ self.invcov @ delta + self.lognormalisation + log(10)
+        return -0.5 * delta.T @ self.invcov @ delta + self.lognormalisation

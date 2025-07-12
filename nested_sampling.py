@@ -107,7 +107,7 @@ def sample_lcdm_unmarg(logl, nlive, filename, rng_key):
     labels = [("h0", r"H_0"), ("omegam", r"\Omega_\mathrm{m}"), ("Mb", r"M_\mathrm{B}")]
 
     final = nested_sampling(
-        logl, prior.log_prob, logl_samples,
+        lambda *args, **kwargs: logl(*args, **kwargs) + jnp.log(10), prior.log_prob, logl_samples,
         prior_samples, nlive, labels, rng_key)
     return save(final, filename, labels)
 
