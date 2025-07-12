@@ -19,7 +19,11 @@ os.makedirs("chains", exist_ok=True)
 
 def main(model_name, *likelihood_names, nlive=1000, **kwargs):
     model = getattr(cosmology, model_name)
-    sampler = getattr(nested_sampling, f"sample_{model_name}")
+    sampler = getattr(nested_sampling, f"sample_{model_name}{'_unmarg'
+                      if any(
+                          'unmarginalised' in name for name in likelihood_names
+                          ) else ''
+                      }")
     logls = [getattr(likelihoods, name) for name in likelihood_names]
 
     def logl(x, model, logls):

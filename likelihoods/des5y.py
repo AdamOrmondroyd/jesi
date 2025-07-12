@@ -1,7 +1,7 @@
 from numpy import loadtxt, argsort, sqrt, fill_diagonal
 import pandas as pd
 from pathlib import Path
-from likelihoods.ia import IaLogL
+from likelihoods.ia import IaLogL, IaLogLUnmarginalised
 
 
 # data loading stolen from Toby
@@ -16,3 +16,5 @@ cov = cov[idx, :][:, idx]
 df = df.iloc[idx]
 
 logl = IaLogL(df, cov, 'MU')
+
+logl_unmarginalised = IaLogLUnmarginalised(df, cov, 'MU')

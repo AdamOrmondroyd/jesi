@@ -52,3 +52,39 @@ class IaLogL:
 
         result = quadratic_form / 2 + self.lognormalisation
         return result
+
+
+class IaLogLUnmarginalised:
+    def __init__(self, df, cov, mb_column, z_cutoff=0.0):
+
+        self.df = df
+        self.cov = cov
+
+        mask = df['zHD'] > z_cutoff
+        self.mb = array(df[mb_column].to_numpy()[mask])
+        self.zhd = array(df['zHD'].to_numpy()[mask])
+        self.zhel = array(df['zHEL'].to_numpy()[mask])
+
+        cov_np = np.array(cov[mask, :][:, mask])
+
+        self.invcov = array(np.linalg.inv(cov_np))
+
+        # Compute log normalization in fp64
+        sign, logdet = np.linalg.slogdet(cov_np)
+        self.lognormalisation = -0.5 * (
+            logdet
+            + np.log(2*np.pi) * len(cov_np)
+        )
+
+    def delta(self, params, cosmology):
+        mu = 5 * log10(
+            cosmology.h0_dl_over_c(self.zhd, self.zhel, params)
+            * c / params['h0']
+        ) + 25
+        return self.mb - (mu + params['Mb'])
+
+    def __call__(self, params, cosmology):
+        delta = self.delta(params, cosmology)
+
+        # add log10 for now to account for Mb prior
+        return -0.5 * delta.T @ self.invcov @ delta + self.lognormalisation + log(10)

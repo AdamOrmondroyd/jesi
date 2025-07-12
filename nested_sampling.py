@@ -8,6 +8,8 @@ from tensorflow_probability.substrates.jax import distributions as tfd
 
 
 h0rd_prior = tfd.Uniform(1_000.0, 100_000.0)  # 1/99_000
+h0_prior = tfd.Uniform(20.0, 100.0)
+mb_prior = tfd.Uniform(-25.0, -15.0)
 omegam_prior = tfd.Uniform(0.01, 0.99)  # 1/0.98
 w0_prior = tfd.Uniform(-3.0, 1.0)  # 1/4
 wa_prior = tfd.Uniform(-3.0, 2.0)  # 1/5
@@ -84,6 +86,25 @@ def sample_lcdm(logl, nlive, filename, rng_key):
     logl_samples = jax.vmap(logl)(prior_samples)
 
     labels = [("h0rd", r"H_0r_\mathrm{d}"), (r"omegam", r"\Omega_\mathrm{m}")]
+
+    final = nested_sampling(
+        logl, prior.log_prob, logl_samples,
+        prior_samples, nlive, labels, rng_key)
+    return save(final, filename, labels)
+
+
+def sample_lcdm_unmarg(logl, nlive, filename, rng_key):
+    prior = tfd.JointDistributionNamed(dict(
+        h0=h0_prior,
+        omegam=omegam_prior,
+        Mb=mb_prior,
+    ))
+    rng_key, init_key = jax.random.split(rng_key, 2)
+
+    prior_samples = prior.sample(seed=init_key, sample_shape=(2*nlive,))
+    logl_samples = jax.vmap(logl)(prior_samples)
+
+    labels = [("h0", r"H_0"), ("omegam", r"\Omega_\mathrm{m}"), ("Mb", r"M_\mathrm{B}")]
 
     final = nested_sampling(
         logl, prior.log_prob, logl_samples,
