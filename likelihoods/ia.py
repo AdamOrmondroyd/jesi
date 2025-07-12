@@ -24,7 +24,7 @@ class IaLogL:
         # Compute constrained inverse C^-1_tilde in fp64
         # This marginalizes out nuisance parameters (H0, absolute magnitude)
         invcov_np = np.linalg.inv(cov_np)
-        invcov_one = invcov_np @ one_np
+        invcov_one = np.linalg.solve(cov_np, one_np)  # More stable than inv @ one
         one_T_invcov_one = (one_np.T @ invcov_one).squeeze()
 
         # Constrained inverse: C^-1_tilde = C^-1 - (C^-1 @ 1)(1^T @ C^-1) / (1^T @ C^-1 @ 1)
