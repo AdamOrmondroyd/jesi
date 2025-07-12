@@ -25,7 +25,7 @@ class IaLogL:
         # This marginalizes out nuisance parameters (H0, absolute magnitude)
         invcov_np = np.linalg.inv(cov_np)
         invcov_one = np.linalg.solve(cov_np, one_np)  # More stable than inv @ one
-        one_T_invcov_one = (one_np.T @ invcov_one).squeeze()
+        one_T_invcov_one = invcov_one.sum()
 
         # Constrained inverse: C^-1_tilde = C^-1 - (C^-1 @ 1)(1^T @ C^-1) / (1^T @ C^-1 @ 1)
         self.invcov_tilde = array(
