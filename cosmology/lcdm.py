@@ -5,7 +5,7 @@ from cosmology.cosmology import (
     dm_over_rs,
     dv_over_rs,
     h0_dl_over_c,
-    partial_with_requirements as partial
+    partial_with_requirements as partial,
 )
 
 

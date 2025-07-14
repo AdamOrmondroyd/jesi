@@ -7,17 +7,20 @@ from blackjax.ns.utils import finalise
 from tensorflow_probability.substrates.jax import distributions as tfd
 
 
-h0rd_prior = tfd.Uniform(1_000.0, 100_000.0)  # 1/99_000
-h0_prior = tfd.Uniform(20.0, 100.0)
-mb_prior = tfd.Uniform(-25.0, -15.0)
-omegam_prior = tfd.Uniform(0.01, 0.99)  # 1/0.98
-w0_prior = tfd.Uniform(-3.0, 1.0)  # 1/4
-wa_prior = tfd.Uniform(-3.0, 2.0)  # 1/5
+# Parameter registry - central definition of all priors and labels
+PARAMETER_REGISTRY = {
+    'h0rd': {'prior': tfd.Uniform(1_000.0, 100_000.0), 'label': r'H_0r_d'},
+    'h0': {'prior': tfd.Uniform(20.0, 100.0), 'label': r'H_0'},
+    'omegam': {'prior': tfd.Uniform(0.01, 0.99), 'label': r'\Omega_m'},
+    'w0': {'prior': tfd.Uniform(-3.0, 1.0), 'label': r'w_0'},
+    'wa': {'prior': tfd.Uniform(-3.0, 2.0), 'label': r'w_a'},
+    'Mb': {'prior': tfd.Uniform(-25.0, -15.0), 'label': r'M_B'},
+}
 
 
 def nested_sampling(log_likelihood, log_prior, logl_samples, prior_samples,
-                    nlive, labels, rng_key, **nss_kwargs,
-                    ):
+                    nlive, labels, rng_key, **nss_kwargs):
+    """Core nested sampling function - unchanged from original."""
     n_delete = nlive // 2
     dead = []
 
@@ -54,18 +57,19 @@ def nested_sampling(log_likelihood, log_prior, logl_samples, prior_samples,
 
 
 def save(final, filename, labels, flatten=None):
+    """Save function - unchanged from original."""
     if flatten is not None:
         particles = flatten(final.particles)
     else:
         particles = final.particles
 
-    labels_map = {l[0]: f'${l[1]}$' for l in labels}
+    labels_map = {label[0]: f'${label[1]}$' for label in labels}
 
     samples = anesthetic.NestedSamples(
         data=particles,
         logL=final.loglikelihood,
         logL_birth=final.loglikelihood_birth,
-        columns=[l[0] for l in labels],
+        columns=[label[0] for label in labels],
         labels=labels_map,
     )
 
@@ -75,172 +79,116 @@ def save(final, filename, labels, flatten=None):
     return samples, final
 
 
-def sample_lcdm(logl, nlive, filename, rng_key):
-    prior = tfd.JointDistributionNamed(dict(
-        h0rd=h0rd_prior,
-        omegam=omegam_prior,
-    ))
-    rng_key, init_key = jax.random.split(rng_key, 2)
-
-    prior_samples = prior.sample(seed=init_key, sample_shape=(2*nlive,))
-    logl_samples = jax.vmap(logl)(prior_samples)
-
-    labels = [("h0rd", r"H_0r_\mathrm{d}"), (r"omegam", r"\Omega_\mathrm{m}")]
-
-    final = nested_sampling(
-        logl, prior.log_prob, logl_samples,
-        prior_samples, nlive, labels, rng_key)
-    return save(final, filename, labels)
+def sort_samples(samples):
+    i = jnp.argsort(samples['a'], axis=-1, descending=True)
+    samples['a'] = jnp.take_along_axis(samples['a'], i, -1)
+    samples['w'] = jnp.concatenate([
+        samples['w'][..., :1],
+        jnp.take_along_axis(samples['w'][..., 1:-1], i, -1),
+        samples['w'][..., -1:],
+    ], axis=-1)
+    return samples
 
 
-def sample_lcdm_unmarg(logl, nlive, filename, rng_key):
-    prior = tfd.JointDistributionNamed(dict(
-        h0=h0_prior,
-        omegam=omegam_prior,
-        Mb=mb_prior,
-    ))
-    rng_key, init_key = jax.random.split(rng_key, 2)
+def sampler(logl, requirements, nlive, filename, rng_key, **kwargs):
+    """Build a sampler with CPL constraint: w0 + wa < 0."""
 
-    prior_samples = prior.sample(seed=init_key, sample_shape=(2*nlive,))
-    logl_samples = jax.vmap(logl)(prior_samples)
+    # Build prior dictionary
+    prior_dict = {}
+    labels = []
+    ns_kwargs = {}
+    save_kwargs = {}
 
-    labels = [("h0", r"H_0"), ("omegam", r"\Omega_\mathrm{m}"), ("Mb", r"M_\mathrm{B}")]
+    for param in requirements:
+        if param == 'a':
+            n = kwargs['n']
+            prior_dict[param] = tfd.Uniform(jnp.zeros(n-2), jnp.ones(n-2))
+            labels += [(f'a{i}', f'a_{{{i}}}') for i in range(1, n-1)]
+        elif param == 'w':
+            n = kwargs['n']
+            prior_dict[param] = tfd.Uniform(jnp.full(n, -3.0), jnp.full(n, 1.0))
+            labels += [(f'w{i}', f'w_{{{i}}}') for i in range(0, n-1)]
+            labels += [('wn-1', r'w_{n-1}')]
+        else:
+            prior_dict[param] = PARAMETER_REGISTRY[param]['prior']
+            labels.append((param, PARAMETER_REGISTRY[param]['label']))
 
-    final = nested_sampling(
-        lambda *args, **kwargs: logl(*args, **kwargs) + jnp.log(10), prior.log_prob, logl_samples,
-        prior_samples, nlive, labels, rng_key)
-    return save(final, filename, labels)
+    # Create cuboid prior (before applying constraint)
+    cuboid_prior = tfd.JointDistributionNamed(prior_dict)
 
-
-def sample_wcdm(logl, nlive, filename, rng_key):
-    prior = tfd.JointDistributionNamed(dict(
-        h0rd=h0rd_prior,
-        omegam=omegam_prior,
-        w0=w0_prior,
-    ))
-    rng_key, init_key = jax.random.split(rng_key, 2)
-
-    prior_samples = prior.sample(seed=init_key, sample_shape=(2*nlive,))
-    logl_samples = jax.vmap(logl)(prior_samples)
-
-    labels = [
-        ("h0rd", r"H_0r_\mathrm{d}"),
-        (r"omegam", r"\Omega_\mathrm{m}"),
-        (r"w0", r"w_0"),
-    ]
-
-    final = nested_sampling(
-        logl, prior.log_prob, logl_samples,
-        prior_samples, nlive, labels, rng_key)
-    return save(final, filename, labels)
-
-
-def sample_cpl(logl, nlive, filename, rng_key):
-    cuboid_prior = tfd.JointDistributionNamed(dict(
-        h0rd=h0rd_prior,
-        omegam=omegam_prior,
-        w0=w0_prior,
-        wa=wa_prior,
-    ))
-
-    def log_prior(x):
-        # return -logv if within the prior bounds, else -inf
-        return jnp.where(x['w0'] + x['wa'] < 0,
-                         cuboid_prior.log_prob(x) + jnp.log(20/(20-9/2)),
-                         -jnp.inf)
-
-    rng_key, init_key = jax.random.split(rng_key, 2)
-
-    # Rejection sampling
-    prior_samples = cuboid_prior.sample(seed=init_key, sample_shape=(nlive,))
-    mask = prior_samples['w0'] + prior_samples['wa'] < 0
-    prior_samples = jax.tree.map(lambda x: x[mask], prior_samples)
-    prior_samples = jax.tree.map(lambda x: x[:nlive], prior_samples)
-
-    logl_samples = jax.vmap(logl)(prior_samples)
-
-    # %%
-    labels = [("h0rd", r"H_0r_\mathrm{d}"), (r"omegam", r"\Omega_\mathrm{m}"),
-              ("w0", r"w_0"), ("wa", r"w_a")]
-
-    final = nested_sampling(
-        logl, log_prior, logl_samples,
-        prior_samples, nlive, labels, rng_key)
-
-    return save(final, filename, labels)
-
-
-def sample_flexknot(logl, nlive, filename, rng_key, n):
-
-    a_prior = tfd.Uniform(jnp.zeros(n-2), jnp.ones(n-2))
-    w_prior = tfd.Uniform(-3*jnp.ones(n), jnp.zeros(n))
+    # Define constrained prior
+    cpl = 'w0' in requirements and 'wa' in requirements
+    flexknot = 'a' in requirements and 'w' in requirements
 
     def sample_prior(seed, sample_shape):
-        k1, k2, k3, k4 = jax.random.split(seed, 4)
-        return {
-            'h0rd': h0rd_prior.sample(sample_shape, seed=k1),
-            'omegam': omegam_prior.sample(sample_shape, seed=k2),
-            'a': a_prior.sample(sample_shape, seed=k3),
-            'w': w_prior.sample(sample_shape, seed=k4),
-        }
+        keys = jax.random.split(seed, len(prior_dict))
+        return dict(
+            zip(prior_dict.keys(),
+                [prior.sample(seed=k, sample_shape=sample_shape)
+                 for k, prior in zip(keys, prior_dict.values())])
+        )
 
     def prior_fn(x):
-        prior = jnp.sum(h0rd_prior.log_prob(x['h0rd']))
-        prior += jnp.sum(omegam_prior.log_prob(x['omegam']))
-        prior += jnp.sum(a_prior.log_prob(x['a']))
-        prior += jnp.sum(w_prior.log_prob(x['w']))
-        return prior
+        return sum([
+            jnp.sum(prior.log_prob(x[param])) for param, prior in prior_dict.items()
+        ])
 
+    if cpl:
+        nprior = 2*nlive
+
+        def log_prior(x):
+            # Only allow w0 + wa < 0
+            return jnp.where(x['w0'] + x['wa'] < 0,
+                             prior_fn(x) + jnp.log(20/(20-9/2)),
+                             -jnp.inf)
+    else:
+        nprior = nlive
+        log_prior = prior_fn
+
+    # Rejection sampling for initial points
     rng_key, init_key = jax.random.split(rng_key, 2)
+    prior_samples = cuboid_prior.sample(seed=init_key, sample_shape=(nprior,))
 
-    def sort_samples(samples):
-        i = jnp.argsort(samples['a'], axis=-1, descending=True)
-        samples['a'] = jnp.take_along_axis(samples['a'], i, -1)
-        samples['w'] = jnp.concatenate([
-            samples['w'][..., :1],
-            jnp.take_along_axis(samples['w'][..., 1:-1], i, -1),
-            samples['w'][..., -1:],
-        ], axis=-1)
-        return samples
-    prior_samples = sample_prior(seed=init_key, sample_shape=(2*nlive,))
-    prior_samples = sort_samples(prior_samples)
+    if cpl:
+        mask = prior_samples['w0'] + prior_samples['wa'] < 0
+        prior_samples = jax.tree.map(lambda x: x[mask], prior_samples)
+        prior_samples = jax.tree.map(lambda x: x[:nlive], prior_samples)
+    elif flexknot:
+        prior_samples = sort_samples(prior_samples)
+
+        @jax.jit
+        def sorted_stepper(x, n, t):
+            y = jax.tree.map(lambda x, n: x + t * n, x, n)
+            y = sort_samples(y)
+            return y
+        ns_kwargs["stepper_fn"] = sorted_stepper
+
+        def flatten(particles):
+            data_dict = {}
+            for key, values in particles.items():
+                if key in ['a', 'w']:  # vector parameters
+                    if key == 'a':
+                        # a1, a2, a3, ... (skip a0 since it's fixed at 1)
+                        for i in range(values.shape[1]):
+                            data_dict[f'{key}{i+1}'] = values[:, i]
+                    else:  # w
+                        # w0, w1, w2, w3, ... wn
+                        for i in range(values.shape[1]):
+                            data_dict[f'{key}{i}'] = values[:, i]
+                else:
+                    # scalar parameters
+                    data_dict[key] = values
+            return data_dict
+        save_kwargs['flatten'] = flatten
+
+    # Evaluate initial likelihoods
     logl_samples = jax.vmap(logl)(prior_samples)
 
-    @jax.jit
-    def wrapped_stepper(x, n, t):
-        y = jax.tree.map(lambda x, n: x + t * n, x, n)
-        y = sort_samples(y)
-        return y
-
-    labels = [
-        ("h0rd", r"H_0r_\mathrm{d}"),
-        (r"omegam", r"\Omega_\mathrm{m}"),
-    ] + [
-        (f"a{i}", f"a_{{{i}}}") for i in range(1, n-1)
-    ] + [
-        (f"w{i}", f"w_{{{i}}}") for i in range(n)
-    ]
-
-    def flatten(particles):
-        data_dict = {}
-        for key, values in particles.items():
-            if key in ['a', 'w']:  # vector parameters
-                if key == 'a':
-                    # a1, a2, a3, ... (skip a0 since it's fixed at 1)
-                    for i in range(values.shape[1]):
-                        data_dict[f'{key}{i+1}'] = values[:, i]
-                else:  # w
-                    # w0, w1, w2, w3, ... wn
-                    for i in range(values.shape[1]):
-                        data_dict[f'{key}{i}'] = values[:, i]
-            else:
-                # scalar parameters
-                data_dict[key] = values
-        return data_dict
-
+    # Run nested sampling with constrained prior
     final = nested_sampling(
-        logl, prior_fn, logl_samples,
+        logl, log_prior, logl_samples,
         prior_samples, nlive, labels, rng_key,
-        stepper_fn=wrapped_stepper,
+        **ns_kwargs,
     )
-    return save(final, filename, labels, flatten=flatten)
+
+    return save(final, filename, labels, **save_kwargs)

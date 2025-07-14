@@ -9,7 +9,7 @@ from fire import Fire
 from functools import partial
 import jax
 import cosmology
-from nested_sampling_auto import sampler
+from nested_sampling import sampler
 import likelihoods
 
 
@@ -31,7 +31,6 @@ def determine_requirements(model, logls):
             requirements |= {req}
     print(f"{requirements=}")
     return requirements
-
 
 
 def main(model_name, *likelihood_names, nlive=1000, **kwargs):
