@@ -10,7 +10,7 @@ c = c/1000
 def cumulative_trapezoid(y, x):
     dx = diff(x, axis=-1)
     t = (y[..., :-1] + y[..., 1:]) / 2 * dx
-    return concatenate([zeros_like(y[..., :1]), kahan_cumsum(t)], axis=-1)
+    return concatenate([zeros_like(y[..., :1]), t.cumsum(axis=-1)], axis=-1)
 
 
 def one_over_h(f_de, z, params):
