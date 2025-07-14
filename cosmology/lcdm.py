@@ -1,4 +1,3 @@
-from functools import partial
 from cosmology.cosmology import (
     one_over_h,
     int_one_over_h,
@@ -6,6 +5,7 @@ from cosmology.cosmology import (
     dm_over_rs,
     dv_over_rs,
     h0_dl_over_c,
+    partial_with_requirements as partial
 )
 
 

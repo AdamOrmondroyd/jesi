@@ -1,4 +1,3 @@
-from functools import partial
 from cosmology.cosmology import (
     one_over_h,
     int_one_over_h,
@@ -6,6 +5,7 @@ from cosmology.cosmology import (
     dm_over_rs,
     dv_over_rs,
     h0_dl_over_c,
+    partial_with_requirements as partial,
 )
 
 
@@ -22,3 +22,7 @@ dm_over_rs = partial(dm_over_rs, int_one_over_h)
 dv_over_rs = partial(dv_over_rs, dh_over_rs, dm_over_rs)
 
 h0_dl_over_c = partial(h0_dl_over_c, one_over_h, int_one_over_h)
+
+# Required parameters for this cosmological model
+for f in (one_over_h, int_one_over_h, dh_over_rs, dm_over_rs, dv_over_rs, h0_dl_over_c):
+    f.requirements |= {'w0'}

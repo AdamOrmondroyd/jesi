@@ -27,3 +27,7 @@ def logl(params, cosmology):
     y = x - mean
     new = -y[None, :] @ invcov_over_2 @ y[:, None] + lognorm
     return new.squeeze()
+
+
+# Assign requirements as function attribute
+logl.requirements = set(i.lower() for i in data.iloc[:, 2])

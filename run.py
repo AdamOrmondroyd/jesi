@@ -9,7 +9,7 @@ from fire import Fire
 from functools import partial
 import jax
 import cosmology
-import nested_sampling
+from nested_sampling_auto import sampler
 import likelihoods
 
 
@@ -17,14 +17,27 @@ rng_key = jax.random.PRNGKey(1729)
 os.makedirs("chains", exist_ok=True)
 
 
+def determine_requirements(model, logls):
+    logl_requirements = set()
+    for logl in logls:
+        logl_requirements |= logl.requirements
+    print(f"{logl_requirements=}")
+    # if requirement is a cosmolgy function, replace requirement
+    requirements = set()
+    for req in logl_requirements:
+        if hasattr(model, req):
+            requirements |= getattr(model, req).requirements
+        else:
+            requirements |= {req}
+    print(f"{requirements=}")
+    return requirements
+
+
+
 def main(model_name, *likelihood_names, nlive=1000, **kwargs):
     model = getattr(cosmology, model_name)
-    sampler = getattr(nested_sampling, f"sample_{model_name}{'_unmarg'
-                      if any(
-                          'unmarginalised' in name for name in likelihood_names
-                          ) else ''
-                      }")
     logls = [getattr(likelihoods, name) for name in likelihood_names]
+    requirements = determine_requirements(model, logls)
 
     def logl(x, model, logls):
         return sum(logl(x, model) for logl in logls)
@@ -40,6 +53,7 @@ def main(model_name, *likelihood_names, nlive=1000, **kwargs):
 
     sampler(
         logl,
+        requirements,
         nlive,
         chains_dir / f"{model_name}{kwargs_str}",
         rng_key,

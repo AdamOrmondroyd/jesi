@@ -7,6 +7,8 @@ c = c / 1000.0
 
 
 class IaLogL:
+    requirements = {'h0_dl_over_c'}
+
     def __init__(self, df, cov, mb_column, z_cutoff=0.0):
 
         self.df = df
@@ -55,6 +57,8 @@ class IaLogL:
 
 
 class IaLogLUnmarginalised:
+    requirements = {'h0_dl_over_c', 'h0', 'Mb'}
+
     def __init__(self, df, cov, mb_column, z_cutoff=0.0):
 
         self.df = df
