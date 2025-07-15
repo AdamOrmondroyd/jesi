@@ -19,12 +19,7 @@ def partial_with_requirements(f, *args, **kwargs):
 def cumulative_trapezoid(y, x):
     dx = diff(x, axis=-1)
     t = (y[..., :-1] + y[..., 1:]) / 2 * dx
-
-    # Test: replace cumsum with scan to see if this fixes CPU/GPU differences
-    def scan_fn(carry, x):
-        return carry + x, carry + x
-    _, cumulative = jax.lax.scan(scan_fn, 0.0, t)
-    return concatenate([zeros_like(y[..., :1]), cumulative], axis=-1)
+    return concatenate([zeros_like(y[..., :1]), t.cumsum(axis=-1)], axis=-1)
 
 
 def one_over_h(f_de, z, params):
