@@ -1,6 +1,6 @@
 import jax
 from jax.lax import rsqrt
-from jax.numpy import concatenate, diff, zeros_like, linspace, trapezoid
+from jax.numpy import concatenate, diff, zeros_like, linspace, trapezoid, sqrt
 from scipy.constants import c
 from functools import partial, wraps
 
@@ -28,10 +28,10 @@ def one_over_h(f_de, z, params):
 
     f_de(z, *args, **kwargs)
     """
-    return rsqrt(
-        params['omegam'] * (1 + z)**3
-        + (1 - params['omegam']) * f_de(z, params)
-    )
+    # Test: replace rsqrt with 1/sqrt to see if this fixes CPU/GPU differences
+    h_squared = (params['omegam'] * (1 + z)**3
+                 + (1 - params['omegam']) * f_de(z, params))
+    return 1.0 / sqrt(h_squared)
 
 
 def int_one_over_h(one_over_h, z, params, resolution=1000):
