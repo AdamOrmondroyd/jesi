@@ -1,9 +1,10 @@
 import numpy as np
-from jax.numpy import array, log10, einsum
+from jax.numpy import array, log, log10, einsum
 from scipy.constants import c
 
 
 c = c / 1000.0
+five_over_log10 = 5 / np.log(10)
 
 
 class IaLogL:
@@ -27,24 +28,23 @@ class IaLogL:
         # This marginalizes out nuisance parameters (H0, absolute magnitude)
         invcov_np = np.linalg.inv(cov_np)
         invcov_one = np.linalg.solve(cov_np, one_np)  # More stable than inv @ one
-        one_T_invcov_one = (one_np.T @ invcov_one).item()
+        one_T_invcov_one = one_np.T @ invcov_one
 
         # Constrained inverse using Cobaya's more stable approach
         # C^-1_tilde = C^-1 - (C^-1 @ 1) @ solve(1^T @ C^-1 @ 1, (C^-1 @ 1)^T)
-        fisher = np.array([[one_T_invcov_one]])  # Make it a 1x1 matrix for solve()
         self.invcov_tilde = array(
-            invcov_np - invcov_one @ np.linalg.solve(fisher, invcov_one.T))
+            invcov_np - invcov_one @ np.linalg.solve(one_T_invcov_one, invcov_one.T))
 
         # Compute log normalization in fp64
         sign, logdet = np.linalg.slogdet(cov_np)
         self.lognormalisation = -0.5 * (
             logdet                           # log|C|
             + np.log(2*np.pi) * (len(cov_np) - 1)  # log(2π)^(n-1) after marginalization
-            + np.log(one_T_invcov_one)       # log(1^T C^-1 1)
+            + np.log(one_T_invcov_one.item())       # log(1^T C^-1 1)
         )
 
     def _y(self, params, cosmology):
-        return 5 * log10(
+        return five_over_log10 * log(
             cosmology.h0_dl_over_c(self.zhd, self.zhel, params)
         ) - self.mb
 
