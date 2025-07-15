@@ -12,4 +12,4 @@ dependencies = [
 ]
 
 [tool.uv.sources]
-blackjax = { git = "https://github.com/handley-lab/blackjax", rev = "1d" }
+blackjax = { git = "https://github.com/handley-lab/blackjax", rev = "nested_sampling" }
