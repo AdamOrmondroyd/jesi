@@ -1,5 +1,4 @@
-from numpy import loadtxt
-import jax.numpy as jnp
+from numpy import loadtxt, sqrt
 import pandas as pd
 from pathlib import Path
 from likelihoods.ia import IaLogL, IaLogLUnmarginalised
@@ -9,7 +8,7 @@ from likelihoods.ia import IaLogL, IaLogLUnmarginalised
 path = Path(__file__).parent/'data/pantheonplus'
 df = pd.read_table(path/'Pantheon+SH0ES.dat', sep=' ', engine='python')
 cov = loadtxt(path/'Pantheon+SH0ES_STAT+SYS.cov', skiprows=1)
-cov = cov.reshape([-1, int(jnp.sqrt(len(cov)))])
+cov = cov.reshape([-1, int(sqrt(len(cov)))])
 
 logl = IaLogL(df, cov, 'm_b_corr', z_cutoff=0.023)
 
