@@ -134,8 +134,8 @@ def sampler(logl, requirements, nlive, filename, rng_key, **kwargs):
         ])
 
     if 'Mb' in requirements:
-        _prior_fn = prior_fn
-        def prior_fn(x): return _prior_fn(x) + jnp.log(-15.0+25.0)
+        _logl = logl
+        def logl(x): return _logl(x) + jnp.log(-15.0+25.0)
 
     if cpl:
         nprior = 2*nlive
