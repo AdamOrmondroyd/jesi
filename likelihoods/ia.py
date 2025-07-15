@@ -23,11 +23,24 @@ class IaLogL:
         cov_np = np.array(cov[mask, :][:, mask], dtype=np.float64)
         one_np = np.ones((len(cov_np), 1), dtype=np.float64)
 
-        # Compute constrained inverse C^-1_tilde in fp64
+        # Compute constrained inverse C^-1_tilde using SVD for numerical stability
         # This marginalizes out nuisance parameters (H0, absolute magnitude)
-        invcov_np = np.linalg.inv(cov_np)
-        invcov_one = np.linalg.solve(cov_np, one_np)  # More stable than inv @ one
-        one_T_invcov_one = invcov_one.sum()
+
+        # Method 1: SVD-based pseudoinverse approach for stability
+        U, s, Vt = np.linalg.svd(cov_np, full_matrices=False)
+
+        # Regularize singular values to improve conditioning
+        # Only regularize very small singular values to preserve the matrix structure
+        s_min = 1e-12 * s[0]  # Relative threshold
+        s_reg = np.where(s < s_min, s_min, s)
+
+        # Compute C^-1 using regularized SVD
+        S_inv = np.diag(1.0 / s_reg)
+        invcov_np = Vt.T @ S_inv @ U.T
+
+        # Compute marginalized inverse more stably
+        invcov_one = invcov_np @ one_np
+        one_T_invcov_one = (one_np.T @ invcov_one).item()
 
         # Constrained inverse: C^-1_tilde = C^-1 - (C^-1 @ 1)(1^T @ C^-1) / (1^T @ C^-1 @ 1)
         self.invcov_tilde = array(
