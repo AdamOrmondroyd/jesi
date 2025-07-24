@@ -8,9 +8,9 @@ from pathlib import Path
 from fire import Fire
 from functools import partial
 import jax
-import cosmology
-from nested_sampling import sampler
-import likelihoods
+from jayesian import cosmology
+from jayesian import likelihoods
+from jayesian.nested_sampling import sampler
 
 
 rng_key = jax.random.PRNGKey(1729)
