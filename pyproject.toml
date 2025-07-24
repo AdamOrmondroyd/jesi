@@ -11,5 +11,12 @@ dependencies = [
     "fire",
 ]
 
+[tool.setuptools.package-data]
+jayesian = [
+    "likelihoods/data/des5y/*",
+    "likelihoods/data/desidr2/*",
+    "likelihoods/data/pantheonplus/*"
+]
+
 [tool.uv.sources]
 blackjax = { git = "https://github.com/handley-lab/blackjax", rev = "nested_sampling" }
