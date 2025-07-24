@@ -8,7 +8,7 @@ from jax.numpy import (
     argmin,
     where,
 )
-from cosmology.cosmology import (
+from jayesian.cosmology.cosmology import (
     one_over_h,
     int_one_over_h,
     dh_over_rs,
