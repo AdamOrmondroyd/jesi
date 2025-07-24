@@ -33,6 +33,8 @@ class IaLogL:
 
         # Compute log normalization in fp64
         sign, logdet = np.linalg.slogdet(cov_np)
+        if sign != 1:
+            raise ValueError("Covariance matrix must be positive definite.")
         self.lognormalisation = -0.5 * (
             logdet                           # log|C|
             + np.log(2*np.pi) * (len(cov_np) - 1)  # log(2π)^(n-1) after marginalization
