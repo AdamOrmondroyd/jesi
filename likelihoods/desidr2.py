@@ -1,5 +1,7 @@
 from pathlib import Path
 import numpy as np
+from jax import vmap
+from jax.lax import switch
 import jax.numpy as jnp
 from pandas import read_csv
 
@@ -21,14 +23,14 @@ func_indices = jnp.array([func_map[name] for name in func_names])
 
 
 def compute_single(z, func_idx, params, cosmology):
-    return jax.lax.switch(
+    return switch(
         func_idx,
         [cosmology.dv_over_rs, cosmology.dm_over_rs, cosmology.dh_over_rs],
         z, params
     )
 
 
-compute_vectorized = jax.vmap(compute_single, in_axes=(0, 0, None, None))
+compute_vectorized = vmap(compute_single, in_axes=(0, 0, None, None))
 
 
 def logl(params, cosmology):
