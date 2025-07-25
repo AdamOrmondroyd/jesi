@@ -1,10 +1,9 @@
 import numpy as np
-from jax.numpy import array, log, log10, einsum
+from jax.numpy import array, log10
 from scipy.constants import c
 
 
 c = c / 1000.0
-five_over_log10 = 5 / np.log(10)
 
 
 class IaLogL:
@@ -48,7 +47,7 @@ class IaLogL:
         )
 
     def _y(self, params, cosmology):
-        return five_over_log10 * log(
+        return 5 * log10(
             cosmology.h0_dl_over_c(self.zhd, self.zhel, params)
         ) - self.mb
 
