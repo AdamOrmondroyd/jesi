@@ -2,8 +2,17 @@ import jax
 from jax.lax import rsqrt
 from jax.numpy import concatenate, diff, zeros_like, linspace, trapezoid
 from scipy.constants import c
+from functools import partial, wraps
 
 c = c/1000
+
+
+@wraps(partial)
+def partial_with_requirements(f, *args, **kwargs):
+    requirements = f.requirements.copy()
+    f = partial(f, *args, **kwargs)
+    f.requirements = requirements
+    return f
 
 
 @jax.jit
@@ -57,3 +66,10 @@ def h0_dl_over_c(one_over_h, int_one_over_h, zhd, zhel, params):
     h_inverse = one_over_h(zhd, params)
     q = cumulative_trapezoid(h_inverse, zhd) + q0
     return (1 + zhel) * q
+
+
+for f in (one_over_h, int_one_over_h, h0_dl_over_c):
+    f.requirements = {'omegam'}
+
+for f in dh_over_rs, dm_over_rs, dv_over_rs:
+    f.requirements = {'omegam', 'h0rd'}

@@ -1,14 +1,7 @@
-import os
-
-if "Darwin" == os.uname().sysname:
-    os.environ["JAX_PLATFORM_NAME"] = "cpu"
-    from jax import config
-
-    config.update("jax_enable_x64", False)
 from numpy import loadtxt, argsort, sqrt, fill_diagonal
 import pandas as pd
 from pathlib import Path
-from likelihoods.ia import IaLogL
+from jayesian.likelihoods.ia import IaLogL, IaLogLUnmarginalised
 
 
 # data loading stolen from Toby
@@ -23,3 +16,5 @@ cov = cov[idx, :][:, idx]
 df = df.iloc[idx]
 
 logl = IaLogL(df, cov, 'MU')
+
+logl_unmarginalised = IaLogLUnmarginalised(df, cov, 'MU')

@@ -2,13 +2,20 @@
 name = "jayesian"
 version = "0.1.0"
 description = "Dark Energy Jaxoscopic Instrument"
-requires-python = ">=3.13"
+requires-python = ">=3.11"
 dependencies = [
     "anesthetic>=2.10.0",
     "blackjax",
     "tensorflow-probability>=0.25.0",
     "tqdm>=4.67.1",
     "fire",
+]
+
+[tool.setuptools.package-data]
+jayesian = [
+    "likelihoods/data/des5y/*",
+    "likelihoods/data/desidr2/*",
+    "likelihoods/data/pantheonplus/*"
 ]
 
 [tool.uv.sources]

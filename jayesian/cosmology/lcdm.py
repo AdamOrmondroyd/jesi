@@ -1,17 +1,15 @@
-from functools import partial
-from cosmology.cosmology import (
+from jayesian.cosmology.cosmology import (
     one_over_h,
     int_one_over_h,
     dh_over_rs,
     dm_over_rs,
     dv_over_rs,
     h0_dl_over_c,
+    partial_with_requirements as partial,
 )
 
 
-def f_de(z, params):
-    w0 = params['w0']
-    return (1+z)**(3*(1+w0))
+def f_de(z, params): return 1.0
 
 
 one_over_h = partial(one_over_h, f_de)
