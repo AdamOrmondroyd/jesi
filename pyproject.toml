@@ -11,6 +11,9 @@ dependencies = [
     "fire",
 ]
 
+[tool.setuptools.packages.find]
+include = ["jayesian/*"]
+
 [tool.setuptools.package-data]
 jayesian = [
     "likelihoods/data/des5y/*",
