@@ -62,6 +62,7 @@ def save(final, filename, labels, flatten=None):
         particles = flatten(final.particles)
     else:
         particles = final.particles
+    print(particles)
 
     labels_map = {label[0]: f'${label[1]}$' for label in labels}
 
@@ -108,7 +109,8 @@ def sampler(logl, requirements, nlive, filename, rng_key, **kwargs):
             n = kwargs['n']
             prior_dict[param] = tfd.Uniform(jnp.full(n, -3.0), jnp.full(n, 1.0))
             labels += [(f'w{i}', f'w_{{{i}}}') for i in range(0, n-1)]
-            labels += [('wn-1', r'w_{n-1}')]
+            if n >= 2:
+                labels += [('wn-1', r'w_{n-1}')]
         else:
             prior_dict[param] = PARAMETER_REGISTRY[param]['prior']
             labels.append((param, PARAMETER_REGISTRY[param]['label']))
@@ -170,15 +172,18 @@ def sampler(logl, requirements, nlive, filename, rng_key, **kwargs):
         def flatten(particles):
             data_dict = {}
             for key, values in particles.items():
+                print(f"{key=}")
                 if key in ['a', 'w']:  # vector parameters
                     if key == 'a':
                         # a1, a2, a3, ... (skip a0 since it's fixed at 1)
                         for i in range(values.shape[1]):
                             data_dict[f'{key}{i+1}'] = values[:, i]
                     else:  # w
-                        # w0, w1, w2, w3, ... wn
+                        # w0, w1, w2, w3, ... wn-1
                         for i in range(values.shape[1]):
-                            data_dict[f'{key}{i}'] = values[:, i]
+                            data_dict[
+                                f'{key}{i if i < values.shape[1]-1 else "n-1"}'
+                            ] = values[:, i]
                 else:
                     # scalar parameters
                     data_dict[key] = values
