@@ -1,15 +1,15 @@
 from likelihoods.desidr2 import logl as desidr2
 from likelihoods.pantheonplus import (
     logl as pantheonplus,
-    logl_unmarginalised as pantheonplus_unmarginalised,
+    loglunmarginalised as pantheonplusunmarginalised,
 )
 from likelihoods.des5y import (
     logl as des5y,
-    logl_unmarginalised as des5y_unmarginalised,
+    loglunmarginalised as des5yunmarginalised,
 )
 
 __all__ = [
     "desidr2",
-    "pantheonplus", "pantheonplus_unmarginalised",
-    "des5y", "des5y_unmarginalised",
+    "pantheonplus", "pantheonplusunmarginalised",
+    "des5y", "des5yunmarginalised",
 ]
