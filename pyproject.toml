@@ -12,7 +12,7 @@ dependencies = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["jayesian/*"]
+include = ["jayesian"]
 
 [tool.setuptools.package-data]
 jayesian = [
