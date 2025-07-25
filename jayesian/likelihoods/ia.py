@@ -1,10 +1,9 @@
 import numpy as np
-from jax.numpy import array, log, log10, einsum
+from jax.numpy import array, log10
 from scipy.constants import c
 
 
 c = c / 1000.0
-five_over_log10 = 5 / np.log(10)
 
 
 class IaLogL:
@@ -32,8 +31,10 @@ class IaLogL:
 
         # Constrained inverse using Cobaya's more stable approach
         # C^-1_tilde = C^-1 - (C^-1 @ 1) @ solve(1^T @ C^-1 @ 1, (C^-1 @ 1)^T)
-        self.invcov_tilde = array(
-            invcov_np - invcov_one @ np.linalg.solve(one_T_invcov_one, invcov_one.T))
+        self.invcov_tilde_over_2 = array(
+            invcov_np
+            - invcov_one @ np.linalg.solve(one_T_invcov_one, invcov_one.T)
+        ) / 2.0
 
         # Compute log normalization in fp64
         sign, logdet = np.linalg.slogdet(cov_np)
@@ -46,17 +47,14 @@ class IaLogL:
         )
 
     def _y(self, params, cosmology):
-        return five_over_log10 * log(
+        return 5 * log10(
             cosmology.h0_dl_over_c(self.zhd, self.zhel, params)
         ) - self.mb
 
     def __call__(self, params, cosmology):
         y = self._y(params, cosmology)
 
-        # Fast quadratic form with precisely computed constrained inverse
-        quadratic_form = -einsum('i,ij,j', y.squeeze(), self.invcov_tilde, y.squeeze())
-
-        result = quadratic_form / 2 + self.lognormalisation
+        result = - y.T @ self.invcov_tilde_over_2 @ y + self.lognormalisation
         return result
 
 
@@ -94,5 +92,4 @@ class IaLogLUnmarginalised:
     def __call__(self, params, cosmology):
         delta = self.delta(params, cosmology)
 
-        # add log10 for now to account for Mb prior
         return -0.5 * delta.T @ self.invcov @ delta + self.lognormalisation

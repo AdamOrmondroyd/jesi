@@ -12,4 +12,4 @@ cov = cov.reshape([-1, int(sqrt(len(cov)))])
 
 logl = IaLogL(df, cov, 'm_b_corr', z_cutoff=0.023)
 
-logl_unmarginalised = IaLogLUnmarginalised(df, cov, 'm_b_corr', z_cutoff=0.023)
+loglunmarginalised = IaLogLUnmarginalised(df, cov, 'm_b_corr', z_cutoff=0.023)
