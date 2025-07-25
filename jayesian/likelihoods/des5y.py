@@ -17,4 +17,4 @@ df = df.iloc[idx]
 
 logl = IaLogL(df, cov, 'MU')
 
-logl_unmarginalised = IaLogLUnmarginalised(df, cov, 'MU')
+loglunmarginalised = IaLogLUnmarginalised(df, cov, 'MU')
