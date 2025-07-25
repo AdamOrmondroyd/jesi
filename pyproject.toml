@@ -1,6 +1,6 @@
 [project]
 name = "jayesian"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Dark Energy Jaxoscopic Instrument"
 requires-python = ">=3.11"
 dependencies = [
@@ -11,6 +11,9 @@ dependencies = [
     "fire",
 ]
 
+[tool.setuptools.packages.find]
+include = ["jayesian"]
+
 [tool.setuptools.package-data]
 jayesian = [
     "likelihoods/data/des5y/*",
@@ -20,3 +23,9 @@ jayesian = [
 
 [tool.uv.sources]
 blackjax = { git = "https://github.com/handley-lab/blackjax", rev = "nested_sampling" }
+
+[build-system]
+requires = ["setuptools_scm>=8"]
+
+[tool.setuptools_scm]
+version_file = "jayesian/_version.py"
