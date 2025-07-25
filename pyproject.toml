@@ -25,4 +25,4 @@ blackjax = { git = "https://github.com/handley-lab/blackjax", rev = "nested_samp
 requires = ["setuptools_scm>=8"]
 
 [tool.setuptools_scm]
-version_file = "suspiciousness/_version.py"
+version_file = "jayesian/_version.py"
