@@ -1,6 +1,6 @@
 [project]
 name = "jayesian"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Dark Energy Jaxoscopic Instrument"
 requires-python = ">=3.13"
 dependencies = [
@@ -13,3 +13,9 @@ dependencies = [
 
 [tool.uv.sources]
 blackjax = { git = "https://github.com/handley-lab/blackjax", rev = "nested_sampling" }
+
+[build-system]
+requires = ["setuptools_scm>=8"]
+
+[tool.setuptools_scm]
+version_file = "suspiciousness/_version.py"
