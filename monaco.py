@@ -6,8 +6,8 @@ if "Darwin" == os.uname().sysname:
 
 import jax
 import numpy as np
-from likelihoods import pantheonplus, des5y
-from cosmology import lcdm
+from jayesian.likelihoods import pantheonplus, des5y
+from jayesian.cosmology import lcdm
 
 
 nsamples = 10000
