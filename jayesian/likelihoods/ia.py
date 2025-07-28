@@ -1,5 +1,6 @@
 import numpy as np
 from jax.numpy import array, log10
+import jax.numpy as jnp
 from scipy.constants import c
 
 
@@ -31,10 +32,15 @@ class IaLogL:
 
         # Constrained inverse using Cobaya's more stable approach
         # C^-1_tilde = C^-1 - (C^-1 @ 1) @ solve(1^T @ C^-1 @ 1, (C^-1 @ 1)^T)
-        self.invcov_tilde_over_2 = array(
+        invcov_tilde = array(
             invcov_np
             - invcov_one @ np.linalg.solve(one_T_invcov_one, invcov_one.T)
-        ) / 2.0
+        )
+        self.invcov_tilde_over_2 = invcov_tilde / 2.0
+        
+        # Compute Cholesky decomposition for GPU vmap bug fix
+        # This avoids the problematic y.T @ M @ y operation
+        self.cholesky_L = array(np.linalg.cholesky(invcov_tilde))
 
         # Compute log normalization in fp64
         sign, logdet = np.linalg.slogdet(cov_np)
@@ -54,7 +60,11 @@ class IaLogL:
     def __call__(self, params, cosmology):
         y = self._y(params, cosmology)
 
-        result = - y.T @ self.invcov_tilde_over_2 @ y + self.lognormalisation
+        # Use Cholesky decomposition to avoid GPU vmap bug
+        # y.T @ M @ y = ||L.T @ y||² where M = L @ L.T
+        v = self.cholesky_L.T @ y
+        quadratic_form = jnp.sum(v**2)
+        result = -quadratic_form / 2.0 + self.lognormalisation
         return result
 
 
