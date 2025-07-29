@@ -67,7 +67,7 @@ class IaLogL:
         return result
 
 
-class IaLogLUnmarginalised:
+class IaLogLUnmarginalised(IaLogL):
     requirements = {'h0_dl_over_c', 'h0', 'Mb'}
 
     def __init__(self, df, cov, mb_column, z_cutoff=0.0):
@@ -82,7 +82,9 @@ class IaLogLUnmarginalised:
 
         cov_np = np.array(cov[mask, :][:, mask])
 
-        self.invcov = array(np.linalg.inv(cov_np))
+        self.cholesky_L = array(np.linalg.cholesky(
+            np.linalg.inv(cov_np)
+        ))
 
         # Compute log normalization in fp64
         sign, logdet = np.linalg.slogdet(cov_np)
@@ -91,14 +93,9 @@ class IaLogLUnmarginalised:
             + np.log(2*np.pi) * len(cov_np)
         )
 
-    def delta(self, params, cosmology):
+    def _y(self, params, cosmology):
         mu = 5 * log10(
             cosmology.h0_dl_over_c(self.zhd, self.zhel, params)
             * c / params['h0']
         ) + 25
         return self.mb - (mu + params['Mb'])
-
-    def __call__(self, params, cosmology):
-        delta = self.delta(params, cosmology)
-
-        return -0.5 * delta.T @ self.invcov @ delta + self.lognormalisation
