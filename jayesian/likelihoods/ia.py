@@ -1,6 +1,5 @@
 import numpy as np
 from jax.numpy import array, log10
-import jax.numpy as jnp
 from scipy.constants import c
 
 
@@ -63,7 +62,7 @@ class IaLogL:
         # Use Cholesky decomposition to avoid GPU vmap bug
         # y.T @ M @ y = ||L.T @ y||² where M = L @ L.T
         v = self.cholesky_L.T @ y
-        quadratic_form = jnp.sum(v**2)
+        quadratic_form = (v**2).sum()
         result = -quadratic_form / 2.0 + self.lognormalisation
         return result
 
