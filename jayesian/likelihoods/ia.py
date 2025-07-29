@@ -41,7 +41,7 @@ class IaLogL:
 
         # Compute Cholesky decomposition for GPU vmap bug fix
         # This avoids the problematic y.T @ M @ y operation
-        cholesky_L = array(np.linalg.cholesky(invcov_tilde / 2.0))
+        cholesky_L = array(np.linalg.cholesky(invcov_tilde))
 
         # Compute log normalization in fp64
         sign, logdet = np.linalg.slogdet(cov_np)
@@ -65,7 +65,7 @@ class IaLogL:
         # Use Cholesky decomposition to avoid GPU vmap bug
         # y.T @ M @ y = ||L.T @ y||² where M = L @ L.T
         v = self.cholesky_L.T @ y
-        return -(v**2).sum() + self.lognorm
+        return -(v**2).sum() / 2.0 + self.lognorm
 
 
 class IaLogLUnmarginalised(IaLogL):
@@ -73,18 +73,17 @@ class IaLogLUnmarginalised(IaLogL):
 
     def _compute_cholesky_and_lognorm(self, cov):
 
-        cholesky_L = array(np.linalg.cholesky(
-            np.linalg.inv(cov) / 2.0
-        ))
+        # NOTE: More stable to invert the cholesky than cholesky the inverse
+        cholesky_L = array(np.linalg.inv(
+            np.linalg.cholesky(cov)
+        )).T
 
-        # Compute log normalization in fp64
         sign, logdet = np.linalg.slogdet(cov)
         lognormalisation = -0.5 * (
             logdet
             + np.log(2*np.pi) * len(cov)
         )
         return cholesky_L, lognormalisation
-
 
     def _y(self, params, cosmology):
         mu = 5 * log10(
