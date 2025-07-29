@@ -36,7 +36,7 @@ class IaLogL:
             - invcov_one @ np.linalg.solve(one_T_invcov_one, invcov_one.T)
         )
         self.invcov_tilde_over_2 = invcov_tilde / 2.0
-        
+
         # Compute Cholesky decomposition for GPU vmap bug fix
         # This avoids the problematic y.T @ M @ y operation
         self.cholesky_L = array(np.linalg.cholesky(invcov_tilde))
