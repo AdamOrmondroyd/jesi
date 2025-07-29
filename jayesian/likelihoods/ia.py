@@ -62,9 +62,7 @@ class IaLogL:
         # Use Cholesky decomposition to avoid GPU vmap bug
         # y.T @ M @ y = ||L.T @ y||² where M = L @ L.T
         v = self.cholesky_L.T @ y
-        quadratic_form = (v**2).sum()
-        result = -quadratic_form / 2.0 + self.lognormalisation
-        return result
+        return -(v**2).sum() / 2.0 + self.lognormalisation
 
 
 class IaLogLUnmarginalised(IaLogL):
