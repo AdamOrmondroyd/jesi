@@ -62,7 +62,6 @@ def save(final, filename, labels, flatten=None):
         particles = flatten(final.particles)
     else:
         particles = final.particles
-    print(particles)
 
     labels_map = {label[0]: f'${label[1]}$' for label in labels}
 
@@ -172,7 +171,6 @@ def sampler(logl, requirements, nlive, filename, rng_key, **kwargs):
         def flatten(particles):
             data_dict = {}
             for key, values in particles.items():
-                print(f"{key=}")
                 if key in ['a', 'w']:  # vector parameters
                     if key == 'a':
                         # a1, a2, a3, ... (skip a0 since it's fixed at 1)
