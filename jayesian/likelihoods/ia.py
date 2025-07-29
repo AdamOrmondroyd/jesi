@@ -12,7 +12,6 @@ class IaLogL:
     def __init__(self, df, cov, mb_column, z_cutoff=0.0):
 
         self.df = df
-        self.cov = cov
 
         mask = df['zHD'] > z_cutoff
         self.mb = array(df[mb_column].to_numpy()[mask])
@@ -20,7 +19,7 @@ class IaLogL:
         self.zhel = array(df['zHEL'].to_numpy()[mask])
 
         cov = cov[mask, :][:, mask]
-        self.cholesky_L, self.lognorm = self._compute_cholesky_and_lognorm( cov)
+        self.cholesky_L, self.lognorm = self._compute_cholesky_and_lognorm(cov)
 
     def _compute_cholesky_and_lognorm(self, cov):
         # Do all matrix operations in fp64 numpy for precision
