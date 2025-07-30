@@ -2,7 +2,7 @@
 name = "jayesian"
 dynamic = ["version"]
 description = "Dark Energy Jaxoscopic Instrument"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 dependencies = [
     "anesthetic>=2.10.0",
     "blackjax",

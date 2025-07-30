@@ -108,7 +108,8 @@ def sampler(logl, requirements, nlive, filename, rng_key, **kwargs):
             n = kwargs['n']
             prior_dict[param] = tfd.Uniform(jnp.full(n, -3.0), jnp.full(n, 1.0))
             labels += [(f'w{i}', f'w_{{{i}}}') for i in range(0, n-1)]
-            labels += [('wn-1', r'w_{n-1}')]
+            if n >= 2:
+                labels += [('wn-1', r'w_{n-1}')]
         else:
             prior_dict[param] = PARAMETER_REGISTRY[param]['prior']
             labels.append((param, PARAMETER_REGISTRY[param]['label']))
@@ -176,9 +177,11 @@ def sampler(logl, requirements, nlive, filename, rng_key, **kwargs):
                         for i in range(values.shape[1]):
                             data_dict[f'{key}{i+1}'] = values[:, i]
                     else:  # w
-                        # w0, w1, w2, w3, ... wn
+                        # w0, w1, w2, w3, ... wn-1
                         for i in range(values.shape[1]):
-                            data_dict[f'{key}{i}'] = values[:, i]
+                            data_dict[
+                                f'{key}{i if i < values.shape[1]-1 else "n-1"}'
+                            ] = values[:, i]
                 else:
                     # scalar parameters
                     data_dict[key] = values
