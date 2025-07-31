@@ -188,6 +188,8 @@ def sampler(logl, requirements, nlive, filename, rng_key, **kwargs):
             return data_dict
         save_kwargs['flatten'] = flatten
 
+    if jax.config.jax_enable_x64:
+        prior_samples = jax.tree.map(lambda x: jnp.asarray(x, dtype=jnp.float64), prior_samples)
     # Evaluate initial likelihoods
     logl_samples = jax.vmap(logl)(prior_samples)
 
