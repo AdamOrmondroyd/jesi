@@ -77,16 +77,18 @@ class IaLogLUnmarginalised(IaLogL):
     def _compute_cholesky_and_lognorm(self, cov):
 
         # NOTE: More stable to invert the cholesky than cholesky the inverse
-        cholesky_L = array(np.linalg.inv(
+        # Bear in mind that the cholesky of the inverse is the TRANSPOSE
+        # of the cholesky of the inverse
+        cholesky_LT = array(np.linalg.inv(
             np.linalg.cholesky(cov)
-        )).T
+        ))
 
         sign, logdet = np.linalg.slogdet(cov)
         lognormalisation = -0.5 * (
             logdet
             + np.log(2*np.pi) * len(cov)
         )
-        return (cholesky_L, None, None), lognormalisation
+        return (cholesky_LT, None, None), lognormalisation
 
     def _y(self, params, cosmology):
         mu = 5 * log10(
@@ -94,3 +96,9 @@ class IaLogLUnmarginalised(IaLogL):
             * c / params['h0']
         ) + 25
         return self.mb - (mu + params['Mb'])
+
+    def __call__(self, params, cosmology):
+        y = self._y(params, cosmology)
+
+        v = self.lT @ y
+        return -(v * v).sum() / 2.0 + self.lognorm
