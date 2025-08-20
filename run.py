@@ -1,17 +1,18 @@
 import os
 if "Darwin" == os.uname().sysname:
     os.environ["JAX_PLATFORM_NAME"] = "cpu"
-    from jax import config
+from jax import config
+config.update("jax_enable_x64", False)
+from pathlib import Path  # noqa: E402
+from fire import Fire  # noqa: E402
+from functools import partial  # noqa: E402
+import jax  # noqa: E402
+from jayesian import cosmology  # noqa: E402
+from jayesian import likelihoods  # noqa: E402
+from jayesian.nested_sampling import sampler  # noqa: E402
 
-    config.update("jax_enable_x64", False)
-from pathlib import Path
-from fire import Fire
-from functools import partial
-import jax
-from jayesian import cosmology
-from jayesian import likelihoods
-from jayesian.nested_sampling import sampler
-
+print(f"JAX in {'64' if config.jax_enable_x64 else '32'}-bit mode")
+print(f"JAX platform: {os.environ.get('JAX_PLATFORM_NAME', 'default')}")
 
 rng_key = jax.random.PRNGKey(1729)
 os.makedirs("chains", exist_ok=True)
