@@ -1,6 +1,7 @@
+from jax import config
 import numpy as np
 from scipy.linalg import ldl
-from jax.numpy import array, log10
+from jax.numpy import array, float32, log10, matmul
 from scipy.constants import c
 
 
@@ -55,6 +56,8 @@ class IaLogL:
             + np.log(2*np.pi) * (len(cov_np) - 1)  # log(2π)^(n-1) after marginalization
             + np.log(one_T_invcov_one.item())       # log(1^T C^-1 1)
         )
+        if not config.jax_enable_x64:
+            lognorm = float32(lognorm)
         return (lT, d, perm), lognorm
 
     def _y(self, params, cosmology):
@@ -67,7 +70,7 @@ class IaLogL:
 
         # Use Cholesky decomposition to avoid GPU vmap bug
         # y.T @ M @ y = ||L.T @ y||² where M = L @ L.T
-        v = self.lT @ y[self.perm]
+        v = matmul(self.lT, y[self.perm], precision="highest")
         return -(v * self.d * v).sum() / 2.0 + self.lognorm
 
 
