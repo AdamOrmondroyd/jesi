@@ -1,8 +1,8 @@
-# Jayesian
+# JESI
 ### Dark Energy Jaxoscopic Instrument
 BAO and SNe Ia likelihoods for `JAX`.
 
-![Jayesian logo](logo.png)
+![jesi logo](logo.png)
 
 Remember on cuda to install the appropriate jax:
 ```bash

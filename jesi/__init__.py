@@ -1,7 +1,7 @@
-from jayesian._version import __version__
-from jayesian import cosmology
-from jayesian import likelihoods
-from jayesian import nested_sampling
+from jesi._version import __version__
+from jesi import cosmology
+from jesi import likelihoods
+from jesi import nested_sampling
 
 __all__ = [
     "__version__",

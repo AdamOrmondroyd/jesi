@@ -1,7 +1,7 @@
-import jayesian.cosmology.lcdm
-import jayesian.cosmology.wcdm
-import jayesian.cosmology.cpl
-import jayesian.cosmology.flexknot
+import jesi.cosmology.lcdm
+import jesi.cosmology.wcdm
+import jesi.cosmology.cpl
+import jesi.cosmology.flexknot
 
 
 __all__ = ["lcdm", "wcdm", "cpl", "flexknot"]
