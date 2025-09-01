@@ -1,9 +1,9 @@
-from jayesian.likelihoods.desidr2 import logl as desidr2
-from jayesian.likelihoods.pantheonplus import (
+from jesi.likelihoods.desidr2 import logl as desidr2
+from jesi.likelihoods.pantheonplus import (
     logl as pantheonplus,
     loglunmarginalised as pantheonplusunmarginalised,
 )
-from jayesian.likelihoods.des5y import (
+from jesi.likelihoods.des5y import (
     logl as des5y,
     loglunmarginalised as des5yunmarginalised,
     logloffset as des5yoffset

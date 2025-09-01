@@ -1,5 +1,5 @@
 [project]
-name = "jayesian"
+name = "jesi"
 dynamic = ["version"]
 description = "Dark Energy Jaxoscopic Instrument"
 requires-python = ">=3.10"
@@ -12,10 +12,10 @@ dependencies = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["jayesian"]
+include = ["jesi"]
 
 [tool.setuptools.package-data]
-jayesian = [
+jesi = [
     "likelihoods/data/des5y/*",
     "likelihoods/data/desidr2/*",
     "likelihoods/data/pantheonplus/*"
@@ -28,4 +28,4 @@ blackjax = { git = "https://github.com/handley-lab/blackjax", rev = "nested_samp
 requires = ["setuptools_scm>=8"]
 
 [tool.setuptools_scm]
-version_file = "jayesian/_version.py"
+version_file = "jesi/_version.py"
