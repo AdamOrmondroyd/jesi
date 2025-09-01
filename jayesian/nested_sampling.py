@@ -15,6 +15,7 @@ PARAMETER_REGISTRY = {
     'w0': {'prior': tfd.Uniform(-3.0, 1.0), 'label': r'w_0'},
     'wa': {'prior': tfd.Uniform(-3.0, 2.0), 'label': r'w_a'},
     'Mb': {'prior': tfd.Uniform(-25.0, -15.0), 'label': r'M_B'},
+    'delta_mb': {'prior': tfd.Uniform(-0.1, 0.1), 'label': r'\Delta M_B'},
 }
 
 
