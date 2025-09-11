@@ -9,13 +9,13 @@ from tensorflow_probability.substrates.jax import distributions as tfd
 
 # Parameter registry - central definition of all priors and labels
 PARAMETER_REGISTRY = {
-    'h0rd': {'prior': tfd.Uniform(1_000.0, 100_000.0), 'label': r'H_0r_d'},
+    'h0rd': {'prior': tfd.Uniform(1_000.0, 100_000.0), 'label': r'H_0r_\mathrm{d}'},
     'h0': {'prior': tfd.Uniform(20.0, 100.0), 'label': r'H_0'},
-    'omegam': {'prior': tfd.Uniform(0.01, 0.99), 'label': r'\Omega_m'},
+    'omegam': {'prior': tfd.Uniform(0.01, 0.99), 'label': r'\Omega_\mathm{m}'},
     'w0': {'prior': tfd.Uniform(-3.0, 1.0), 'label': r'w_0'},
     'wa': {'prior': tfd.Uniform(-3.0, 2.0), 'label': r'w_a'},
-    'Mb': {'prior': tfd.Uniform(-25.0, -15.0), 'label': r'M_B'},
-    'delta_mb': {'prior': tfd.Uniform(-0.1, 0.1), 'label': r'\Delta M_B'},
+    'Mb': {'prior': tfd.Uniform(-25.0, -15.0), 'label': r'M_\mathrm{B}'},
+    'delta_mb': {'prior': tfd.Uniform(-0.1, 0.1), 'label': r'\Delta M_\mathrm{B}'},
 }
 
 
