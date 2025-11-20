@@ -8,6 +8,8 @@ Remember on cuda to install the appropriate jax:
 ```bash
 pip install "jax[cuda12]==0.5.2"
 pip install -e .
+# or
+pip install -e ".[cuda12]"
 ```
 
 ### Nested sampling
