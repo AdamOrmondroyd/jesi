@@ -1,4 +1,4 @@
-from numpy import load, loadtxt, argsort, sqrt, fill_diagonal, zeros, tril_indices, triu_indices
+from numpy import load, argsort, zeros, tril_indices, triu_indices
 from numpy.linalg import inv
 from jax.numpy import array
 import pandas as pd
