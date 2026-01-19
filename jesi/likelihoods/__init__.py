@@ -8,11 +8,14 @@ from jesi.likelihoods.des5y import (
     loglunmarginalised as des5yunmarginalised,
     logloffset as des5yoffset
 )
-from jesi.likelihoods.dovekie import logl as dovekie
+from jesi.likelihoods.dovekie import (
+    logl as dovekie,
+    logloffset as dovekieoffset,
+)
 
 __all__ = [
     "desidr2",
     "pantheonplus", "pantheonplusunmarginalised",
     "des5y", "des5yunmarginalised", "des5yoffset",
-    "dovekie",
+    "dovekie", "dovekieoffset"
 ]
