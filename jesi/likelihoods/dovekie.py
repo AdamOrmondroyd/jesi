@@ -12,17 +12,19 @@ df = pd.read_table(path/'DES-Dovekie_HD.csv', sep='\\s+', engine='python', skipr
 
 d = load(path/"STAT+SYS.npz")
 nsn = d['nsn'].item()
-inv_cov = zeros((nsn, nsn))
-inv_cov[triu_indices(nsn)] = d['cov']
+invcov = zeros((nsn, nsn))
+invcov[triu_indices(nsn)] = d['cov']
 
 # Reflect to lower triangular part to make it symmetric
 i_lower = tril_indices(nsn, -1)
-inv_cov[i_lower] = inv_cov.T[i_lower]
+invcov[i_lower] = invcov.T[i_lower]
+
+cov = inv(invcov)
 
 idx = argsort(df['zHD'])
-invcov = inv_cov[idx, :][:, idx]
+invcov = invcov[idx, :][:, idx]
+cov = cov[idx, :][:, idx]
 df = df.iloc[idx]
-cov = inv(inv_cov)
 
 logl = IaLogL(df, cov, 'MU')
 
