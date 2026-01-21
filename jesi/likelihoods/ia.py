@@ -11,7 +11,7 @@ c = c / 1000.0
 class IaLogL:
     requirements = {'h0_dl_over_c'}
 
-    def __init__(self, df, cov, mb_column, z_cutoff=0.0):
+    def __init__(self, df, cov, mb_column, invcov=None, z_cutoff=0.0):
 
         self.df = df
 
@@ -21,25 +21,33 @@ class IaLogL:
         self.zhel = array(df['zHEL'].to_numpy()[mask])
 
         cov = cov[mask, :][:, mask]
-        (self.lT, self.d, self.perm), self.lognorm = self._compute_cholesky_and_lognorm(cov)
+        if invcov is not None:
+            invcov = invcov[mask, :][:, mask]
+        (self.lT, self.d, self.perm), self.lognorm = self._compute_cholesky_and_lognorm(cov, invcov)
 
-    def _compute_cholesky_and_lognorm(self, cov):
+    def _compute_cholesky_and_lognorm(self, cov, invcov=None):
         # Do all matrix operations in fp64 numpy for precision
         cov_np = np.array(cov, dtype=np.float64)
         one_np = np.ones((len(cov_np), 1), dtype=np.float64)
 
         # Compute constrained inverse C^-1_tilde for marginalization
         # This marginalizes out nuisance parameters (H0, absolute magnitude)
-        invcov_np = np.linalg.inv(cov_np)
-        invcov_one = np.linalg.solve(cov_np, one_np)  # More stable than inv @ one
-        one_T_invcov_one = invcov_one.sum(keepdims=True)
+        invcov_np = np.linalg.inv(cov_np) if invcov is None else np.array(invcov, dtype=np.float64)
 
-        # Constrained inverse using Cobaya's more stable approach
-        # C^-1_tilde = C^-1 - (C^-1 @ 1) @ solve(1^T @ C^-1 @ 1, (C^-1 @ 1)^T)
-        invcov_tilde = (
-            invcov_np
-            - invcov_one @ np.linalg.solve(one_T_invcov_one, invcov_one.T)
-        )
+        if invcov is not None:
+            invcov_one = invcov_np @ one_np
+            one_T_invcov_one = invcov.sum()
+            invcov_tilde = invcov_np - invcov_one @ invcov_one.T / one_T_invcov_one
+        else:
+            invcov_one = np.linalg.solve(cov_np, one_np)  # More stable than inv @ one
+            one_T_invcov_one = invcov_one.sum(keepdims=True)
+
+            # Constrained inverse using Cobaya's more stable approach
+            # C^-1_tilde = C^-1 - (C^-1 @ 1) @ solve(1^T @ C^-1 @ 1, (C^-1 @ 1)^T)
+            invcov_tilde = (
+                invcov_np
+                - invcov_one @ np.linalg.solve(one_T_invcov_one, invcov_one.T)
+            )
 
         # Compute Cholesky decomposition for GPU vmap bug fix
         # This avoids the problematic y.T @ M @ y operation
@@ -48,7 +56,11 @@ class IaLogL:
         d = array(np.diag(d))
 
         # Compute log normalization in fp64
-        sign, logdet = np.linalg.slogdet(cov_np)
+        if invcov is None:
+            sign, logdet = np.linalg.slogdet(cov_np)
+        else:
+            sign, logdet = np.linalg.slogdet(invcov_np)
+            logdet = -logdet
         if sign != 1:
             raise ValueError("Covariance matrix must be positive definite.")
         lognorm = -0.5 * (
@@ -87,16 +99,21 @@ class IaLogLUnmarginalised(IaLogL):
             )
         return super().__init__(df, cov, mb_column, z_cutoff)
 
-    def _compute_cholesky_and_lognorm(self, cov):
+    def _compute_cholesky_and_lognorm(self, cov, invcov=None):
 
         # NOTE: More stable to invert the cholesky than cholesky the inverse
         # Bear in mind that the cholesky of the inverse is the TRANSPOSE
         # of the inverse of the cholesky
-        cholesky_LT = array(np.linalg.inv(
-            np.linalg.cholesky(cov)
-        ))
+        if invcov is not None:
+            cholesky_LT = np.linalg.cholesky(invcov).T
+            sign, logdet = np.linalg.slogdet(invcov)
+            logdet = -logdet
+        else:
+            cholesky_LT = array(np.linalg.inv(
+                np.linalg.cholesky(cov)
+            ))
+            sign, logdet = np.linalg.slogdet(cov)
 
-        sign, logdet = np.linalg.slogdet(cov)
         lognormalisation = -0.5 * (
             logdet
             + np.log(2*np.pi) * len(cov)

@@ -3,7 +3,7 @@ from numpy.linalg import inv
 from jax.numpy import array
 import pandas as pd
 from pathlib import Path
-from jesi.likelihoods.ia import IaLogL, IaLogLUnmarginalised
+from jesi.likelihoods.ia import IaLogL
 
 
 # data loading stolen from Toby
@@ -26,7 +26,7 @@ invcov = invcov[idx, :][:, idx]
 cov = cov[idx, :][:, idx]
 df = df.iloc[idx]
 
-logl = IaLogL(df, cov, 'MU')
+logl = IaLogL(df, cov, 'MU', invcov)
 
 # george fiddle
 des_id = 10.0
