@@ -5,12 +5,11 @@ from jesi.likelihoods.pantheonplus import (
 )
 from jesi.likelihoods.des5y import (
     logl as des5y,
-    loglunmarginalised as des5yunmarginalised,
-    logloffset as des5yoffset
+    logloffset as des5yoffset,
 )
 
 __all__ = [
     "desidr2",
     "pantheonplus", "pantheonplusunmarginalised",
-    "des5y", "des5yunmarginalised", "des5yoffset",
+    "des5y", "des5yoffset",
 ]
