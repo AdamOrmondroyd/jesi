@@ -91,7 +91,7 @@ class IaLogLUnmarginalised(IaLogL):
 
         # NOTE: More stable to invert the cholesky than cholesky the inverse
         # Bear in mind that the cholesky of the inverse is the TRANSPOSE
-        # of the cholesky of the inverse
+        # of the inverse of the cholesky
         cholesky_LT = array(np.linalg.inv(
             np.linalg.cholesky(cov)
         ))
