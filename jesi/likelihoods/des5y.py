@@ -18,8 +18,6 @@ df = df.iloc[idx]
 
 logl = IaLogL(df, cov, 'MU')
 
-loglunmarginalised = IaLogLUnmarginalised(df, cov, 'MU')
-
 # george fiddle
 des_id = 10.0
 george_mask = df['IDSURVEY'] != des_id
