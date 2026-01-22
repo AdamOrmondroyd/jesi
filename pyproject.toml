@@ -24,7 +24,7 @@ jesi = [
 ]
 
 [project.optional-dependencies]
-cuda12= ["jax[cuda12]"]
+cuda12= ["jax[cuda12]<0.7.0"]
 
 [tool.uv.sources]
 blackjax = { git = "https://github.com/handley-lab/blackjax", rev = "nested_sampling" }
