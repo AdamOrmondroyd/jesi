@@ -9,7 +9,6 @@ from jesi.likelihoods.des5y import (
 )
 from jesi.likelihoods.dovekie import (
     logl as dovekie,
-    loglunmarginalised as dovekieunmarginalised,
     logloffset as dovekieoffset,
 )
 
