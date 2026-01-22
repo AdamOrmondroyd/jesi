@@ -4,6 +4,7 @@ import blackjax
 from tqdm import tqdm
 import anesthetic
 from blackjax.ns.utils import finalise
+from blackjax.ns.nss import default_stepper_fn
 from tensorflow_probability.substrates.jax import distributions as tfd
 
 
@@ -163,10 +164,10 @@ def sampler(logl, requirements, nlive, filename, rng_key, **kwargs):
         prior_samples = sort_samples(prior_samples)
 
         @jax.jit
-        def sorted_stepper(x, n, t):
-            y = jax.tree.map(lambda x, n: x + t * n, x, n)
+        def sorted_stepper(*args, **kwargs):
+            y, step_accepted = default_stepper_fn(*args, **kwargs)
             y = sort_samples(y)
-            return y
+            return y, step_accepted
         ns_kwargs["stepper_fn"] = sorted_stepper
 
         def flatten(particles):
