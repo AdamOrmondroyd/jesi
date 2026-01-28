@@ -36,41 +36,35 @@ def nested_sampling(log_likelihood, log_prior, logl_samples, prior_samples,
 
     def integrate(ns, rng_key):
         state = ns.init(prior_samples)
+        one_step = jax.jit(ns.step)
 
-        @jax.jit
-        def one_step(carry, xs):
-            state, k = carry
-            k, subk = jax.random.split(k, 2)
-            state, dead_point = ns.step(subk, state)
-            return (state, k), dead_point
-
-        one_step((state, rng_key), None)
         with tqdm(desc="Dead points", unit=" dead points") as pbar:
-            while (not state.logZ_live - state.logZ < -3):
-                (state, rng_key), dead_info = one_step((state, rng_key), None)
+            while (not state.integrator.logZ_live - state.integrator.logZ < -3):
+                rng_key, subkey = jax.random.split(rng_key)
+                state, dead_info = one_step(subkey, state)
                 dead.append(dead_info)
-                pbar.update(n_delete)
+                pbar.update(len(dead_info.particles.loglikelihood))
 
         return state, finalise(state, dead)
 
     state, final = integrate(ns, rng_key)
-    print(f"sampler logZ = {state.logZ:.2f}")
+    print(f"sampler logZ = {state.integrator.logZ:.2f}")
     return final
 
 
 def save(final, filename, labels, flatten=None):
     """Save function - unchanged from original."""
     if flatten is not None:
-        particles = flatten(final.particles)
+        particles = flatten(final.particles.position)
     else:
-        particles = final.particles
+        particles = final.particles.position
 
     labels_map = {label[0]: f'${label[1]}$' for label in labels}
 
     samples = anesthetic.NestedSamples(
         data=particles,
-        logL=final.loglikelihood,
-        logL_birth=final.loglikelihood_birth,
+        logL=final.particles.loglikelihood,
+        logL_birth=final.particles.loglikelihood_birth,
         columns=[label[0] for label in labels],
         labels=labels_map,
     )
