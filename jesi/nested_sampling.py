@@ -6,6 +6,11 @@ import anesthetic
 from blackjax.ns.utils import finalise
 from blackjax.ns.nss import default_stepper_fn
 from tensorflow_probability.substrates.jax import distributions as tfd
+from polychord.polychord import (
+    MAX_CLUSTERS,
+    generate_slice_direction_fn,
+    update_inner_kernel_params_fn,
+)
 
 
 # Parameter registry - central definition of all priors and labels
@@ -31,6 +36,8 @@ def nested_sampling(log_likelihood, log_prior, logl_samples, prior_samples,
         loglikelihood_fn=log_likelihood,
         num_delete=n_delete,
         num_inner_steps=3*len(labels),
+        generate_slice_direction_fn=generate_slice_direction_fn,
+        update_inner_kernel_params_fn=update_inner_kernel_params_fn,
         **nss_kwargs,
     )
 
@@ -44,6 +51,12 @@ def nested_sampling(log_likelihood, log_prior, logl_samples, prior_samples,
                 state, dead_info = one_step(subkey, state)
                 dead.append(dead_info)
                 pbar.update(len(dead_info.particles.loglikelihood))
+
+        counts = state.inner_kernel_params["counts"]
+        active_counts = counts[counts > 0]
+        print(f"logZ ={state.integrator.logZ:7.2f} | clusters: {len(active_counts)} {active_counts}")
+        if counts[MAX_CLUSTERS - 1] > 0 and len(active_counts) == MAX_CLUSTERS:
+            raise RuntimeError(f"MAX_CLUSTERS ({MAX_CLUSTERS}) reached, clusters are merging. Increase MAX_CLUSTERS.")
 
         return state, finalise(state, dead)
 
