@@ -56,11 +56,11 @@ def nested_sampling(log_likelihood, log_prior, logl_samples, prior_samples,
                 dead.append(dead_info)
                 pbar.update(len(dead_info.particles.loglikelihood))
 
-            counts = state.inner_kernel_params["counts"]
-            active_counts = counts[counts > 0]
-            print(f"logZ ={state.integrator.logZ:7.2f} | clusters: {len(active_counts)} {active_counts}")
-            if counts[MAX_CLUSTERS - 1] > 0 and len(active_counts) == MAX_CLUSTERS:
-                raise RuntimeError(f"MAX_CLUSTERS ({MAX_CLUSTERS}) reached, clusters are merging. Increase MAX_CLUSTERS.")
+                counts = state.inner_kernel_params["counts"]
+                active_counts = counts[counts > 0]
+                print(f"logZ ={state.integrator.logZ:7.2f} | clusters: {len(active_counts)} {active_counts}")
+                if counts[MAX_CLUSTERS - 1] > 0 and len(active_counts) == MAX_CLUSTERS:
+                    raise RuntimeError(f"MAX_CLUSTERS ({MAX_CLUSTERS}) reached, clusters are merging. Increase MAX_CLUSTERS.")
 
         return state, finalise(state, dead)
 
