@@ -158,7 +158,7 @@ def sampler(logl, requirements, nlive, filename, rng_key, **kwargs):
         prior_samples = jax.tree.map(lambda x: x[mask], prior_samples)
         prior_samples = jax.tree.map(lambda x: x[:nlive], prior_samples)
     elif flexknot:
-        prior_samples = sort_samples(prior_samples)
+        # prior_samples = sort_samples(prior_samples)
 
         _logl = logl
         bj = tfb.Chain([tfb.IteratedSigmoidCentered(), tfb.Invert(tfb.Sigmoid())])
