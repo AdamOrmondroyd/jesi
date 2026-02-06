@@ -6,10 +6,10 @@ BAO and SNe Ia likelihoods for `JAX`.
 
 Remember on cuda to install the appropriate jax:
 ```bash
-pip install "jax[cuda12]==0.5.2"
+pip install "jax[cuda]"
 pip install -e .
 # or
-pip install -e ".[cuda12]"
+pip install -e ".[cuda]"
 ```
 
 ### Nested sampling

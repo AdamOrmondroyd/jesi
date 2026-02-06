@@ -24,7 +24,7 @@ jesi = [
 ]
 
 [project.optional-dependencies]
-cuda12= ["jax[cuda12]"]
+cuda= ["jax[cuda]"]
 
 [tool.uv.sources]
 blackjax = { git = "https://github.com/handley-lab/blackjax", rev = "refactor-slice-sampling-api" }
