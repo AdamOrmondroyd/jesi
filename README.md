@@ -10,6 +10,8 @@ pip install "jax[cuda]"
 pip install -e .
 # or
 pip install -e ".[cuda]"
+# or using uv
+uv sync --extra cuda
 ```
 
 ### Nested sampling
