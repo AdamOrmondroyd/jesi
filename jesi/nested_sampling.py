@@ -161,7 +161,7 @@ def sampler(logl, requirements, nlive, filename, rng_key, **kwargs):
         prior_samples = sort_samples(prior_samples)
 
         _logl = logl
-        bj = tfb.IteratedSigmoidCentered()
+        bj = tfb.Chain([tfb.IteratedSigmoidCentered(), tfb.Invert(tfb.Sigmoid())])
         def logl(x):
             a = x['a']
             x['a'] = jnp.cumsum(bj.forward(a))[-2::-1]
