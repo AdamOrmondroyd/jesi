@@ -10,7 +10,6 @@ dependencies = [
     "tqdm>=4.67.1",
     "fire",
     "jax",
-    "polychord",
 ]
 
 [tool.setuptools.packages.find]
@@ -27,8 +26,7 @@ jesi = [
 cuda= ["jax[cuda]"]
 
 [tool.uv.sources]
-blackjax = { git = "https://github.com/handley-lab/blackjax", rev = "refactor-slice-sampling-api" }
-polychord = { git = "ssh://github.com/PolyChord/polychord", rev = "master" }
+blackjax = { git = "https://github.com/handley-lab/blackjax" }
 
 [build-system]
 requires = ["setuptools_scm>=8"]
