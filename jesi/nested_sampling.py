@@ -162,11 +162,12 @@ def sampler(logl, requirements, nlive, filename, rng_key, **kwargs):
 
         _logl = logl
         bj = tfb.Chain([tfb.IteratedSigmoidCentered(), tfb.Invert(tfb.Sigmoid())])
+        log_factorial = jax.scipy.special.gammaln(n - 1)
         def logl(x):
             x = {**x}
             a = x['a']
-            x['a'] = jnp.cumsum(bj.forward(a), axis=-1)[-2::-1]
-            return _logl(x) + bj.forward_log_det_jacobian(a, event_ndims=1)
+            x['a'] = jnp.cumsum(bj.forward(a), axis=-1)[..., -2::-1]
+            return _logl(x) + bj.forward_log_det_jacobian(a, event_ndims=1) + log_factorial
 
         @jax.jit
         def sorted_stepper(*args, **kwargs):
@@ -181,6 +182,7 @@ def sampler(logl, requirements, nlive, filename, rng_key, **kwargs):
                 if key in ['a', 'w']:  # vector parameters
                     if key == 'a':
                         # a1, a2, a3, ... (skip a0 since it's fixed at 1)
+                        values = jnp.cumsum(bj.forward(values), axis=-1)[..., -2::-1]
                         for i in range(values.shape[1]):
                             data_dict[f'{key}{i+1}'] = values[:, i]
                     else:  # w
