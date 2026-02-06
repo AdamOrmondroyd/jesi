@@ -163,8 +163,9 @@ def sampler(logl, requirements, nlive, filename, rng_key, **kwargs):
         _logl = logl
         bj = tfb.IteratedSigmoidCentered()
         def logl(x):
-            x['a'] = jnp.cumsum(bj.forward(x['a']))[-2::-1]
-            return _logl(x)
+            a = x['a']
+            x['a'] = jnp.cumsum(bj.forward(a))[-2::-1]
+            return _logl(x) + bj.forward_log_det_jacobian(a, event_ndims=1)
 
         @jax.jit
         def sorted_stepper(*args, **kwargs):
