@@ -163,6 +163,7 @@ def sampler(logl, requirements, nlive, filename, rng_key, **kwargs):
         _logl = logl
         bj = tfb.Chain([tfb.IteratedSigmoidCentered(), tfb.Invert(tfb.Sigmoid())])
         def logl(x):
+            x = {**x}
             a = x['a']
             x['a'] = jnp.cumsum(bj.forward(a), axis=-1)[-2::-1]
             return _logl(x) + bj.forward_log_det_jacobian(a, event_ndims=1)
