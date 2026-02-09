@@ -4,7 +4,6 @@ import blackjax
 from tqdm import tqdm
 import anesthetic
 from blackjax.ns.utils import finalise
-from blackjax.ns.nss import default_stepper_fn
 from tensorflow_probability.substrates.jax import distributions as tfd
 
 
@@ -75,17 +74,6 @@ def save(final, filename, labels, flatten=None):
     return samples, final
 
 
-def sort_samples(samples):
-    i = jnp.argsort(samples['a'], axis=-1, descending=True)
-    samples['a'] = jnp.take_along_axis(samples['a'], i, -1)
-    samples['w'] = jnp.concatenate([
-        samples['w'][..., :1],
-        jnp.take_along_axis(samples['w'][..., 1:-1], i, -1),
-        samples['w'][..., -1:],
-    ], axis=-1)
-    return samples
-
-
 def sampler(logl, requirements, nlive, filename, rng_key, **kwargs):
     """Build a sampler with CPL constraint: w0 + wa < 0."""
 
@@ -154,11 +142,8 @@ def sampler(logl, requirements, nlive, filename, rng_key, **kwargs):
         mask = prior_samples['w0'] + prior_samples['wa'] < 0
         prior_samples = jax.tree.map(lambda x: x[mask], prior_samples)
         prior_samples = jax.tree.map(lambda x: x[:nlive], prior_samples)
+
     elif flexknot:
-        # prior_samples = sort_samples(prior_samples)
-
-        _logl = logl
-
         def stick_breaking(u):
             """Map Uniform[0,1]^k to sorted descending values on [0,1].
 
@@ -175,17 +160,12 @@ def sampler(logl, requirements, nlive, filename, rng_key, **kwargs):
                 [z, jnp.ones_like(z[..., :1])], axis=-1) * remaining
             return jnp.cumsum(w, axis=-1)[..., -2::-1]
 
+        _logl = logl
+
         def logl(x):
             x = {**x}
             x['a'] = stick_breaking(x['a'])
             return _logl(x)
-
-        @jax.jit
-        def sorted_stepper(*args, **kwargs):
-            y, step_accepted = default_stepper_fn(*args, **kwargs)
-            y = sort_samples(y)
-            return y, step_accepted
-        # ns_kwargs["stepper_fn"] = sorted_stepper
 
         def flatten(particles):
             data_dict = {}
