@@ -155,30 +155,33 @@ def sampler(logl, requirements, nlive, filename, rng_key, **kwargs):
         prior_samples = jax.tree.map(lambda x: x[mask], prior_samples)
         prior_samples = jax.tree.map(lambda x: x[:nlive], prior_samples)
     elif flexknot:
-        # prior_samples = sort_samples(prior_samples)
+        prior_samples = sort_samples(prior_samples)
+        def log_prior(x):
+            a = x['a']
+            return jnp.where(jnp.all(a[..., :-1] > a[..., 1:], axis=-1), prior_fn(x), -jnp.inf)
 
-        _logl = logl
-
-        def stick_breaking(u):
-            """Map Uniform[0,1]^k to sorted descending values on [0,1].
-
-            Uses Beta(1, c_i) inverse CDF + stick-breaking.
-            Jacobian is constant -log(k!), cancels with factorial correction.
-            """
-            k = u.shape[-1]
-            c = jnp.arange(k, 0, -1)
-            z = -jnp.expm1(jnp.log1p(-u) / c)
-            remaining = jnp.concatenate(
-                [jnp.ones_like(z[..., :1]),
-                 jnp.cumprod(1 - z, axis=-1)], axis=-1)
-            w = jnp.concatenate(
-                [z, jnp.ones_like(z[..., :1])], axis=-1) * remaining
-            return jnp.cumsum(w, axis=-1)[..., -2::-1]
-
-        def logl(x):
-            x = {**x}
-            x['a'] = stick_breaking(x['a'])
-            return _logl(x)
+        # _logl = logl
+        #
+        # def stick_breaking(u):
+        #     """Map Uniform[0,1]^k to sorted descending values on [0,1].
+        #
+        #     Uses Beta(1, c_i) inverse CDF + stick-breaking.
+        #     Jacobian is constant -log(k!), cancels with factorial correction.
+        #     """
+        #     k = u.shape[-1]
+        #     c = jnp.arange(k, 0, -1)
+        #     z = -jnp.expm1(jnp.log1p(-u) / c)
+        #     remaining = jnp.concatenate(
+        #         [jnp.ones_like(z[..., :1]),
+        #          jnp.cumprod(1 - z, axis=-1)], axis=-1)
+        #     w = jnp.concatenate(
+        #         [z, jnp.ones_like(z[..., :1])], axis=-1) * remaining
+        #     return jnp.cumsum(w, axis=-1)[..., -2::-1]
+        #
+        # def logl(x):
+        #     x = {**x}
+        #     x['a'] = stick_breaking(x['a'])
+        #     return _logl(x)
 
         @jax.jit
         def sorted_stepper(*args, **kwargs):
@@ -193,7 +196,7 @@ def sampler(logl, requirements, nlive, filename, rng_key, **kwargs):
                 if key in ['a', 'w']:  # vector parameters
                     if key == 'a':
                         # a1, a2, a3, ... (skip a0 since it's fixed at 1)
-                        values = stick_breaking(values)
+                        # values = stick_breaking(values)
                         for i in range(values.shape[1]):
                             data_dict[f'{key}{i+1}'] = values[:, i]
                     else:  # w
