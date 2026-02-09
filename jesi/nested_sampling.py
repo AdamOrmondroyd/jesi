@@ -167,7 +167,8 @@ def sampler(logl, requirements, nlive, filename, rng_key, **kwargs):
             x = {**x}
             a = x['a']
             x['a'] = jnp.cumsum(bj.forward(a), axis=-1)[..., -2::-1]
-            return _logl(x) + bj.forward_log_det_jacobian(a, event_ndims=1) + log_factorial
+            jac = bj.forward_log_det_jacobian(a, event_ndims=1)
+            return jnp.where(jnp.isnan(jac), -jnp.inf, _logl(x) + jac + log_factorial)
 
         @jax.jit
         def sorted_stepper(*args, **kwargs):
