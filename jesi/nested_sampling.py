@@ -5,10 +5,7 @@ from tqdm import tqdm
 import anesthetic
 from blackjax.ns.utils import finalise
 from blackjax.ns.nss import default_stepper_fn
-from tensorflow_probability.substrates.jax import (
-    distributions as tfd,
-    bijectors as tfb,
-)
+from tensorflow_probability.substrates.jax import distributions as tfd
 
 
 # Parameter registry - central definition of all priors and labels
