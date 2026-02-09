@@ -163,18 +163,51 @@ def sampler(logl, requirements, nlive, filename, rng_key, **kwargs):
         _logl = logl
         bj = tfb.Chain([tfb.IteratedSigmoidCentered(), tfb.Invert(tfb.Sigmoid())])
         log_factorial = jax.scipy.special.gammaln(n - 1)
+
+        def stick_breaking(a):
+            """Centered stick-breaking: [0,1]^k → sorted descending values.
+
+            Equivalent to Chain([ISC, Invert(Sigmoid)]) but without logit.
+            """
+            k = a.shape[-1]
+            c = jnp.arange(k, 0, -1)
+            z = a / (a * (1 - c) + c)
+            remaining = jnp.concatenate(
+                [jnp.ones_like(z[..., :1]), jnp.cumprod(1 - z, axis=-1)],
+                axis=-1)
+            w = jnp.concatenate(
+                [z, jnp.ones_like(z[..., :1])], axis=-1) * remaining
+            return jnp.cumsum(w, axis=-1)[..., -2::-1]
+
+        def stick_breaking_fldj(a):
+            """Log-det-Jacobian of centered stick-breaking."""
+            k = a.shape[-1]
+            c = jnp.arange(k, 0, -1)
+            denom = a * (1 - c) + c
+            # dz/da = c / denom^2
+            log_dz_da = jnp.log(c) - 2 * jnp.log(denom)
+            # log(1-z) = log(c) + log(1-a) - log(denom), stable via log1p
+            log_1mz = jnp.log(c) + jnp.log1p(-a) - jnp.log(denom)
+            coeffs = jnp.arange(k - 1, 0, -1)
+            sb_fldj = jnp.sum(coeffs * log_1mz[..., :-1], axis=-1)
+            return jnp.sum(log_dz_da, axis=-1) + sb_fldj
+
+        # Verify equivalence with TFP Chain
+        _test_a = jnp.linspace(0.1, 0.9, n - 2)
+        assert jnp.allclose(stick_breaking(_test_a), jnp.cumsum(bj.forward(_test_a), axis=-1)[..., -2::-1]), \
+            "stick_breaking does not match Chain forward"
+        assert jnp.allclose(stick_breaking_fldj(_test_a), bj.forward_log_det_jacobian(_test_a, event_ndims=1)), \
+            "stick_breaking_fldj does not match Chain fldj"
+        assert not jnp.any(jnp.isnan(stick_breaking(_test_a))), \
+            "stick_breaking produces NaN"
+        assert not jnp.any(jnp.isnan(stick_breaking_fldj(_test_a))), \
+            "stick_breaking_fldj produces NaN"
+
         def logl(x):
             x = {**x}
             a = x['a']
-            x['a'] = jnp.cumsum(bj.forward(a), axis=-1)[..., -2::-1]
-            return _logl(x) + bj.forward_log_det_jacobian(a, event_ndims=1) + log_factorial
-
-        @jax.jit
-        def sorted_stepper(*args, **kwargs):
-            y, step_accepted = default_stepper_fn(*args, **kwargs)
-            y = sort_samples(y)
-            return y, step_accepted
-        # ns_kwargs["stepper_fn"] = sorted_stepper
+            x['a'] = stick_breaking(a)
+            return _logl(x) + stick_breaking_fldj(a) + log_factorial
 
         def flatten(particles):
             data_dict = {}
@@ -182,7 +215,7 @@ def sampler(logl, requirements, nlive, filename, rng_key, **kwargs):
                 if key in ['a', 'w']:  # vector parameters
                     if key == 'a':
                         # a1, a2, a3, ... (skip a0 since it's fixed at 1)
-                        values = jnp.cumsum(bj.forward(values), axis=-1)[..., -2::-1]
+                        values = stick_breaking(values)
                         for i in range(values.shape[1]):
                             data_dict[f'{key}{i+1}'] = values[:, i]
                     else:  # w
