@@ -1,3 +1,6 @@
+# NOTE: David, please remember that I have now changed the prior on h0rd to
+# [3,650, 18,250] (consistent with my flexknot work) from [1,000, 100,000]
+# (consistent with majority of DESI work). You may wish to switch this back
 import os
 
 if "Darwin" == os.uname().sysname:
