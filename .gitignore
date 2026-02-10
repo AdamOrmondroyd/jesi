@@ -2,7 +2,7 @@ chains/
 plots/
 
 # version
-jayesian/_version.py
+jesi/_version.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

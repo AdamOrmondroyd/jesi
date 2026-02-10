@@ -1,13 +1,17 @@
-# Jayesian
+# JESI
 ### Dark Energy Jaxoscopic Instrument
 BAO and SNe Ia likelihoods for `JAX`.
 
-![Jayesian logo](logo.png)
+![jesi logo](logo.png)
 
 Remember on cuda to install the appropriate jax:
 ```bash
-pip install "jax[cuda12]==0.5.2"
+pip install "jax[cuda]"
 pip install -e .
+# or
+pip install -e ".[cuda]"
+# or using uv
+uv sync --extra cuda
 ```
 
 ### Nested sampling

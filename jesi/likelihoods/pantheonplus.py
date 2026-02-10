@@ -1,7 +1,7 @@
 from numpy import loadtxt, sqrt
 import pandas as pd
 from pathlib import Path
-from jayesian.likelihoods.ia import IaLogL, IaLogLUnmarginalised
+from jesi.likelihoods.ia import IaLogL, IaLogLUnmarginalised
 
 
 # data loading stolen from Toby

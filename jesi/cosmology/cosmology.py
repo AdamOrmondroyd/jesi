@@ -39,7 +39,6 @@ def int_one_over_h(one_over_h, z, params, resolution=1000):
     Integrate 1/(H(z) / H0) from 0 to z.
     """
     _z = linspace(0, z, resolution, axis=0)
-    # _one_over_h = [one_over_h(__z, omegam, *args, **kwargs) for __z in _z]
     _one_over_h = one_over_h(_z, params)
     return trapezoid(_one_over_h, _z, axis=0)
 

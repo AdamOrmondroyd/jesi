@@ -9,12 +9,13 @@ from tensorflow_probability.substrates.jax import distributions as tfd
 
 # Parameter registry - central definition of all priors and labels
 PARAMETER_REGISTRY = {
-    'h0rd': {'prior': tfd.Uniform(1_000.0, 100_000.0), 'label': r'H_0r_d'},
+    'h0rd': {'prior': tfd.Uniform(3_650.0, 18_250.0), 'label': r'H_0r_\mathrm{d}'},
     'h0': {'prior': tfd.Uniform(20.0, 100.0), 'label': r'H_0'},
-    'omegam': {'prior': tfd.Uniform(0.01, 0.99), 'label': r'\Omega_m'},
+    'omegam': {'prior': tfd.Uniform(0.01, 0.99), 'label': r'\Omega_\mathrm{m}'},
     'w0': {'prior': tfd.Uniform(-3.0, 1.0), 'label': r'w_0'},
     'wa': {'prior': tfd.Uniform(-3.0, 2.0), 'label': r'w_a'},
-    'Mb': {'prior': tfd.Uniform(-25.0, -15.0), 'label': r'M_B'},
+    'Mb': {'prior': tfd.Uniform(-25.0, -15.0), 'label': r'M_\mathrm{B}'},
+    'delta_mb': {'prior': tfd.Uniform(-0.1, 0.1), 'label': r'\Delta M_\mathrm{B}'},
 }
 
 
@@ -34,41 +35,35 @@ def nested_sampling(log_likelihood, log_prior, logl_samples, prior_samples,
 
     def integrate(ns, rng_key):
         state = ns.init(prior_samples)
+        one_step = jax.jit(ns.step)
 
-        @jax.jit
-        def one_step(carry, xs):
-            state, k = carry
-            k, subk = jax.random.split(k, 2)
-            state, dead_point = ns.step(subk, state)
-            return (state, k), dead_point
-
-        one_step((state, rng_key), None)
         with tqdm(desc="Dead points", unit=" dead points") as pbar:
-            while (not state.logZ_live - state.logZ < -3):
-                (state, rng_key), dead_info = one_step((state, rng_key), None)
+            while (not state.integrator.logZ_live - state.integrator.logZ < -3):
+                rng_key, subkey = jax.random.split(rng_key)
+                state, dead_info = one_step(subkey, state)
                 dead.append(dead_info)
-                pbar.update(n_delete)
+                pbar.update(len(dead_info.particles.loglikelihood))
 
         return state, finalise(state, dead)
 
     state, final = integrate(ns, rng_key)
-    print(f"sampler logZ = {state.logZ:.2f}")
+    print(f"sampler logZ = {state.integrator.logZ:.2f}")
     return final
 
 
 def save(final, filename, labels, flatten=None):
     """Save function - unchanged from original."""
     if flatten is not None:
-        particles = flatten(final.particles)
+        particles = flatten(final.particles.position)
     else:
-        particles = final.particles
+        particles = final.particles.position
 
     labels_map = {label[0]: f'${label[1]}$' for label in labels}
 
     samples = anesthetic.NestedSamples(
         data=particles,
-        logL=final.loglikelihood,
-        logL_birth=final.loglikelihood_birth,
+        logL=final.particles.loglikelihood,
+        logL_birth=final.particles.loglikelihood_birth,
         columns=[label[0] for label in labels],
         labels=labels_map,
     )
@@ -77,17 +72,6 @@ def save(final, filename, labels, flatten=None):
           f"= {samples.logL_P():.2f} - {samples.D_KL():.2f}")
     samples.to_csv(f"{filename}.csv")
     return samples, final
-
-
-def sort_samples(samples):
-    i = jnp.argsort(samples['a'], axis=-1, descending=True)
-    samples['a'] = jnp.take_along_axis(samples['a'], i, -1)
-    samples['w'] = jnp.concatenate([
-        samples['w'][..., :1],
-        jnp.take_along_axis(samples['w'][..., 1:-1], i, -1),
-        samples['w'][..., -1:],
-    ], axis=-1)
-    return samples
 
 
 def sampler(logl, requirements, nlive, filename, rng_key, **kwargs):
@@ -158,15 +142,30 @@ def sampler(logl, requirements, nlive, filename, rng_key, **kwargs):
         mask = prior_samples['w0'] + prior_samples['wa'] < 0
         prior_samples = jax.tree.map(lambda x: x[mask], prior_samples)
         prior_samples = jax.tree.map(lambda x: x[:nlive], prior_samples)
-    elif flexknot:
-        prior_samples = sort_samples(prior_samples)
 
-        @jax.jit
-        def sorted_stepper(x, n, t):
-            y = jax.tree.map(lambda x, n: x + t * n, x, n)
-            y = sort_samples(y)
-            return y
-        ns_kwargs["stepper_fn"] = sorted_stepper
+    elif flexknot:
+        def stick_breaking(u):
+            """Map Uniform[0,1]^k to sorted descending values on [0,1].
+
+            Uses Beta(1, c_i) inverse CDF + stick-breaking.
+            Jacobian is constant -log(k!), cancels with factorial correction.
+            """
+            k = u.shape[-1]
+            c = jnp.arange(k, 0, -1)
+            z = -jnp.expm1(jnp.log1p(-u) / c)
+            remaining = jnp.concatenate(
+                [jnp.ones_like(z[..., :1]),
+                 jnp.cumprod(1 - z, axis=-1)], axis=-1)
+            w = jnp.concatenate(
+                [z, jnp.ones_like(z[..., :1])], axis=-1) * remaining
+            return jnp.cumsum(w, axis=-1)[..., -2::-1]
+
+        _logl = logl
+
+        def logl(x):
+            x = {**x}
+            x['a'] = stick_breaking(x['a'])
+            return _logl(x)
 
         def flatten(particles):
             data_dict = {}
@@ -174,6 +173,7 @@ def sampler(logl, requirements, nlive, filename, rng_key, **kwargs):
                 if key in ['a', 'w']:  # vector parameters
                     if key == 'a':
                         # a1, a2, a3, ... (skip a0 since it's fixed at 1)
+                        values = stick_breaking(values)
                         for i in range(values.shape[1]):
                             data_dict[f'{key}{i+1}'] = values[:, i]
                     else:  # w
@@ -188,6 +188,8 @@ def sampler(logl, requirements, nlive, filename, rng_key, **kwargs):
             return data_dict
         save_kwargs['flatten'] = flatten
 
+    if jax.config.jax_enable_x64:
+        prior_samples = jax.tree.map(lambda x: jnp.asarray(x, dtype=jnp.float64), prior_samples)
     # Evaluate initial likelihoods
     logl_samples = jax.vmap(logl)(prior_samples)
 
