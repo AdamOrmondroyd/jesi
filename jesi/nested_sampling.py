@@ -4,13 +4,12 @@ import blackjax
 from tqdm import tqdm
 import anesthetic
 from blackjax.ns.utils import finalise
-from blackjax.ns.nss import default_stepper_fn
 from tensorflow_probability.substrates.jax import distributions as tfd
 
 
 # Parameter registry - central definition of all priors and labels
 PARAMETER_REGISTRY = {
-    'h0rd': {'prior': tfd.Uniform(1_000.0, 100_000.0), 'label': r'H_0r_\mathrm{d}'},
+    'h0rd': {'prior': tfd.Uniform(3_650.0, 18_250.0), 'label': r'H_0r_\mathrm{d}'},
     'h0': {'prior': tfd.Uniform(20.0, 100.0), 'label': r'H_0'},
     'omegam': {'prior': tfd.Uniform(0.01, 0.99), 'label': r'\Omega_\mathrm{m}'},
     'w0': {'prior': tfd.Uniform(-3.0, 1.0), 'label': r'w_0'},
@@ -75,17 +74,6 @@ def save(final, filename, labels, flatten=None):
     return samples, final
 
 
-def sort_samples(samples):
-    i = jnp.argsort(samples['a'], axis=-1, descending=True)
-    samples['a'] = jnp.take_along_axis(samples['a'], i, -1)
-    samples['w'] = jnp.concatenate([
-        samples['w'][..., :1],
-        jnp.take_along_axis(samples['w'][..., 1:-1], i, -1),
-        samples['w'][..., -1:],
-    ], axis=-1)
-    return samples
-
-
 def sampler(logl, requirements, nlive, filename, rng_key, **kwargs):
     """Build a sampler with CPL constraint: w0 + wa < 0."""
 
@@ -144,7 +132,12 @@ def sampler(logl, requirements, nlive, filename, rng_key, **kwargs):
                              -jnp.inf)
     else:
         nprior = nlive
-        log_prior = prior_fn
+        if flexknot:
+            def log_prior(x):
+                a = x['a']
+                return jnp.where(jnp.all(a[..., :-1] > a[..., 1:], axis=-1), prior_fn(x), -jnp.inf)
+        else:
+            log_prior = prior_fn
 
     # Rejection sampling for initial points
     rng_key, init_key = jax.random.split(rng_key, 2)
@@ -154,41 +147,6 @@ def sampler(logl, requirements, nlive, filename, rng_key, **kwargs):
         mask = prior_samples['w0'] + prior_samples['wa'] < 0
         prior_samples = jax.tree.map(lambda x: x[mask], prior_samples)
         prior_samples = jax.tree.map(lambda x: x[:nlive], prior_samples)
-    elif flexknot:
-        prior_samples = sort_samples(prior_samples)
-        def log_prior(x):
-            a = x['a']
-            return jnp.where(jnp.all(a[..., :-1] > a[..., 1:], axis=-1), prior_fn(x), -jnp.inf)
-
-        # _logl = logl
-        #
-        # def stick_breaking(u):
-        #     """Map Uniform[0,1]^k to sorted descending values on [0,1].
-        #
-        #     Uses Beta(1, c_i) inverse CDF + stick-breaking.
-        #     Jacobian is constant -log(k!), cancels with factorial correction.
-        #     """
-        #     k = u.shape[-1]
-        #     c = jnp.arange(k, 0, -1)
-        #     z = -jnp.expm1(jnp.log1p(-u) / c)
-        #     remaining = jnp.concatenate(
-        #         [jnp.ones_like(z[..., :1]),
-        #          jnp.cumprod(1 - z, axis=-1)], axis=-1)
-        #     w = jnp.concatenate(
-        #         [z, jnp.ones_like(z[..., :1])], axis=-1) * remaining
-        #     return jnp.cumsum(w, axis=-1)[..., -2::-1]
-        #
-        # def logl(x):
-        #     x = {**x}
-        #     x['a'] = stick_breaking(x['a'])
-        #     return _logl(x)
-
-        @jax.jit
-        def sorted_stepper(*args, **kwargs):
-            y, step_accepted = default_stepper_fn(*args, **kwargs)
-            y = sort_samples(y)
-            return y, step_accepted
-        # ns_kwargs["stepper_fn"] = sorted_stepper
 
         def flatten(particles):
             data_dict = {}
