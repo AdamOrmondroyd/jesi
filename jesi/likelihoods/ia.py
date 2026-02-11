@@ -132,3 +132,17 @@ class IaLogLUnmarginalised(IaLogL):
 
         v = self.lT @ y
         return -(v * v).sum() / 2.0 + self.lognorm
+
+
+class GeorgeIaLogL(IaLogL):
+    requirements = {'h0_dl_over_c', 'delta_mb'}
+
+    def __init__(self, george_mask, *args, **kwargs):
+        self.george_mask = array(george_mask.to_numpy())
+        super().__init__(*args, **kwargs)
+
+    def _y(self, params, cosmology):
+        # offset is the george offset
+        y = super()._y(params, cosmology)
+        y -= params['delta_mb'] * self.george_mask
+        return y

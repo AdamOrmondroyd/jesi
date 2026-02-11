@@ -2,8 +2,7 @@ from numpy import load, argsort, zeros, tril_indices, triu_indices
 from numpy.linalg import inv
 import pandas as pd
 from pathlib import Path
-from jesi.likelihoods.ia import IaLogL
-from jesi.likelihoods.des5y import GeorgeIaLogL
+from jesi.likelihoods.ia import IaLogL, GeorgeIaLogL
 
 
 # data loading stolen from Toby
