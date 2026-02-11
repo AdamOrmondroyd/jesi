@@ -1,16 +1,14 @@
 import os
-if "Darwin" == os.uname().sysname:
-    os.environ["JAX_PLATFORM_NAME"] = "cpu"
 from jax import config
-config.update("jax_enable_x64", False)
-from pathlib import Path  # noqa: E402
-from fire import Fire  # noqa: E402
-from functools import partial  # noqa: E402
-import jax  # noqa: E402
-from jesi import cosmology  # noqa: E402
-from jesi import likelihoods  # noqa: E402
-from jesi.nested_sampling import sampler  # noqa: E402
+from pathlib import Path
+from fire import Fire
+from functools import partial
+import jax
+from jesi import cosmology
+from jesi import likelihoods
+from jesi.nested_sampling import sampler
 
+config.update("jax_enable_x64", False)
 print(f"JAX in {'64' if config.jax_enable_x64 else '32'}-bit mode")
 print(f"JAX platform: {os.environ.get('JAX_PLATFORM_NAME', 'default')}")
 

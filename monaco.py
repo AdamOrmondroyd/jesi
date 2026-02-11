@@ -1,13 +1,11 @@
 import os
-if "Darwin" == os.uname().sysname:
-    os.environ["JAX_PLATFORM_NAME"] = "cpu"
 from jax import config
-config.update("jax_enable_x64", False)
-import jax  # noqa: E402
-import numpy as np  # noqa: E402
-from jesi.likelihoods import pantheonplus, des5y  # noqa: E402
-from jesi.cosmology import lcdm  # noqa: E402
+import jax
+import numpy as np
+from jesi.likelihoods import pantheonplus, des5y
+from jesi.cosmology import lcdm
 
+config.update("jax_enable_x64", False)
 print(f"JAX in {'64' if config.jax_enable_x64 else '32'}-bit mode")
 print(f"JAX platform: {os.environ.get('JAX_PLATFORM_NAME', 'default')}")
 
