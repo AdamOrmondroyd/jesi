@@ -1,9 +1,9 @@
 from numpy import load, argsort, zeros, tril_indices, triu_indices
 from numpy.linalg import inv
-from jax.numpy import array
 import pandas as pd
 from pathlib import Path
 from jesi.likelihoods.ia import IaLogL
+from jesi.likelihoods.des5y import GeorgeIaLogL
 
 
 # data loading stolen from Toby
@@ -31,20 +31,5 @@ logl = IaLogL(df, cov, 'MU', invcov)
 # george fiddle
 des_id = 10.0
 george_mask = df['IDSURVEY'] != des_id
-
-
-class GeorgeIaLogL(IaLogL):
-    requirements = {'h0_dl_over_c', 'delta_mb'}
-
-    def __init__(self, george_mask, *args, **kwargs):
-        self.george_mask = array(george_mask.to_numpy())
-        super().__init__(*args, **kwargs)
-
-    def _y(self, params, cosmology):
-        # offset is the george offset
-        y = super()._y(params, cosmology)
-        y -= params['delta_mb'] * self.george_mask
-        return y
-
 
 logloffset = GeorgeIaLogL(george_mask, df, cov, mb_column='MU', z_cutoff=0.0)
