@@ -24,7 +24,7 @@ jesi = [
 
 [project.optional-dependencies]
 cuda = ["jax[cuda]"]
-mac = ["jax-mps", "optax==0.2.8"]
+mac = ["jax==0.10.0", "jax-mps==0.10.0", "optax==0.2.8"]
 
 [tool.uv.sources]
 blackjax = { git = "https://github.com/handley-lab/blackjax" }
