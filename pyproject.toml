@@ -23,7 +23,7 @@ jesi = [
 ]
 
 [project.optional-dependencies]
-cuda= ["jax[cuda]"]
+cuda = ["jax[cuda]"]
 
 [tool.uv.sources]
 blackjax = { git = "https://github.com/handley-lab/blackjax" }
