@@ -13,7 +13,7 @@ dependencies = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["jesi"]
+include = ["jesi*"]
 
 [tool.setuptools.package-data]
 jesi = [
