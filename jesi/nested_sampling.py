@@ -1,5 +1,6 @@
 import time
 from functools import partial
+import numpy as np
 from jax import numpy as jnp
 import jax
 import blackjax
@@ -45,31 +46,50 @@ def async_nss(logprior_fn, loglikelihood_fn, num_inner_steps, num_delete):
     return SamplingAlgorithm(init_fn, kernel)
 
 
+def counted(log_likelihood, calls):
+    """Wrap a likelihood so each batched evaluation appends to ``calls``."""
+
+    def count(logl):
+        calls.append(1)
+        return np.zeros(logl.shape, logl.dtype)
+
+    def wrapped(x):
+        logl = log_likelihood(x)
+        shape = jax.ShapeDtypeStruct(jnp.shape(logl), jnp.result_type(logl))
+        return logl + jax.pure_callback(count, shape, logl,
+                                        vmap_method="expand_dims")
+
+    return wrapped
+
+
 def nested_sampling(log_likelihood, log_prior, logl_samples, prior_samples,
-                    nlive, labels, rng_key, kernel='sync', **nss_kwargs):
+                    nlive, labels, rng_key, kernel='sync', count=False,
+                    **nss_kwargs):
     """Core nested sampling function - unchanged from original."""
     n_delete = nlive // 2
     dead = []
 
-    build = {'sync': blackjax.nss, 'async': async_nss}[kernel]
-    ns = build(
+    build = partial(
+        {'sync': blackjax.nss, 'async': async_nss}[kernel],
         logprior_fn=log_prior,
-        loglikelihood_fn=log_likelihood,
         num_delete=n_delete,
         num_inner_steps=3*len(labels),
         **nss_kwargs,
     )
+    ns = build(loglikelihood_fn=log_likelihood)
 
     def integrate(ns, rng_key):
         state = ns.init(prior_samples)
-        one_step = jax.jit(ns.step)
-
         # compile outside the timed loop
-        one_step.lower(rng_key, state).compile()
+        one_step = jax.jit(ns.step).lower(rng_key, state).compile()
+        history = []
+
         start = time.perf_counter()
         with tqdm(desc="Dead points", unit=" dead points") as pbar:
             while (not state.integrator.logZ_live - state.integrator.logZ < -3):
                 rng_key, subkey = jax.random.split(rng_key)
+                if count:
+                    history.append((subkey, state))
                 state, dead_info = one_step(subkey, state)
                 dead.append(dead_info)
                 pbar.update(len(dead_info.particles.loglikelihood))
@@ -77,6 +97,24 @@ def nested_sampling(log_likelihood, log_prior, logl_samples, prior_samples,
         elapsed = time.perf_counter() - start
         print(f"{kernel} kernel: {len(dead)} steps in {elapsed:.2f} s "
               f"({elapsed / len(dead) * 1e3:.1f} ms/step)")
+
+        if count:
+            # replay each step with a counting likelihood; the callback adds 0,
+            # so the replay follows the timed trajectory
+            calls = []
+            counting_step = jax.jit(
+                build(loglikelihood_fn=counted(log_likelihood, calls)).step
+            )
+            evals = []
+            for subkey, before in tqdm(history, desc="Counting"):
+                del calls[:]
+                jax.block_until_ready(counting_step(subkey, before))
+                evals.append(len(calls))
+            evals = np.array(evals)
+            print(f"{kernel} kernel: {evals.sum()} batched likelihood "
+                  f"evaluations, {evals.mean():.1f}/step "
+                  f"(min {evals.min()}, max {evals.max()}), "
+                  f"{elapsed / evals.sum() * 1e3:.2f} ms/evaluation")
 
         return state, finalise(state, dead)
 
@@ -114,7 +152,8 @@ def sampler(logl, requirements, nlive, filename, rng_key, **kwargs):
     # Build prior dictionary
     prior_dict = {}
     labels = []
-    ns_kwargs = {'kernel': kwargs.get('kernel', 'sync')}
+    ns_kwargs = {'kernel': kwargs.get('kernel', 'sync'),
+                 'count': kwargs.get('count', False)}
     save_kwargs = {}
 
     for param in requirements:
