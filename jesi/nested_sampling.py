@@ -159,12 +159,28 @@ def sort_samples(samples):
 
 def sampler(logl, requirements, nlive, filename, rng_key, **kwargs):
     """Build a sampler with CPL constraint w0 + wa < 0, or flexknot sorting."""
+    logl, log_prior, prior_samples, labels, save_kwargs, rng_key = setup(
+        logl, requirements, nlive, rng_key, **kwargs
+    )
+    ns_kwargs = {'kernel': kwargs.get('kernel', 'sync'),
+                 'count': kwargs.get('count', False)}
+
+    # Run nested sampling with constrained prior
+    final = nested_sampling(
+        logl, log_prior,
+        prior_samples, nlive, labels, rng_key,
+        **ns_kwargs,
+    )
+
+    return save(final, filename, labels, **save_kwargs)
+
+
+def setup(logl, requirements, nlive, rng_key, **kwargs):
+    """Build the likelihood, prior and initial live points."""
 
     # Build prior dictionary
     prior_dict = {}
     labels = []
-    ns_kwargs = {'kernel': kwargs.get('kernel', 'sync'),
-                 'count': kwargs.get('count', False)}
     save_kwargs = {}
 
     for param in requirements:
@@ -260,11 +276,4 @@ def sampler(logl, requirements, nlive, filename, rng_key, **kwargs):
     if jax.config.jax_enable_x64:
         prior_samples = jax.tree.map(lambda x: jnp.asarray(x, dtype=jnp.float64), prior_samples)
 
-    # Run nested sampling with constrained prior
-    final = nested_sampling(
-        logl, log_prior,
-        prior_samples, nlive, labels, rng_key,
-        **ns_kwargs,
-    )
-
-    return save(final, filename, labels, **save_kwargs)
+    return logl, log_prior, prior_samples, labels, save_kwargs, rng_key
