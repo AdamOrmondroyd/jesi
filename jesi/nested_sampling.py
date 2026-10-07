@@ -1,8 +1,14 @@
+import time
+from functools import partial
 from jax import numpy as jnp
 import jax
 import blackjax
 from tqdm import tqdm
 import anesthetic
+from blackjax import SamplingAlgorithm
+from blackjax.ns.adaptive import init
+from blackjax.ns.base import init_state_strategy
+from blackjax.ns.nss import build_async_kernel, live_covariance_factor
 from blackjax.ns.utils import finalise
 from tensorflow_probability.substrates.jax import distributions as tfd
 
@@ -19,13 +25,34 @@ PARAMETER_REGISTRY = {
 }
 
 
+def async_nss(logprior_fn, loglikelihood_fn, num_inner_steps, num_delete):
+    """blackjax.nss with the slice FSM chains in place of synchronous moves."""
+    init_state_fn = partial(
+        init_state_strategy,
+        logprior_fn=logprior_fn,
+        loglikelihood_fn=loglikelihood_fn,
+    )
+    kernel = build_async_kernel(init_state_fn, num_inner_steps, num_delete)
+
+    def init_fn(position, rng_key=None):
+        return init(
+            position,
+            init_state_fn=jax.vmap(init_state_fn),
+            update_inner_kernel_params_fn=live_covariance_factor,
+            rng_key=rng_key,
+        )
+
+    return SamplingAlgorithm(init_fn, kernel)
+
+
 def nested_sampling(log_likelihood, log_prior, logl_samples, prior_samples,
-                    nlive, labels, rng_key, **nss_kwargs):
+                    nlive, labels, rng_key, kernel='sync', **nss_kwargs):
     """Core nested sampling function - unchanged from original."""
     n_delete = nlive // 2
     dead = []
 
-    ns = blackjax.nss(
+    build = {'sync': blackjax.nss, 'async': async_nss}[kernel]
+    ns = build(
         logprior_fn=log_prior,
         loglikelihood_fn=log_likelihood,
         num_delete=n_delete,
@@ -37,12 +64,19 @@ def nested_sampling(log_likelihood, log_prior, logl_samples, prior_samples,
         state = ns.init(prior_samples)
         one_step = jax.jit(ns.step)
 
+        # compile outside the timed loop
+        one_step.lower(rng_key, state).compile()
+        start = time.perf_counter()
         with tqdm(desc="Dead points", unit=" dead points") as pbar:
             while (not state.integrator.logZ_live - state.integrator.logZ < -3):
                 rng_key, subkey = jax.random.split(rng_key)
                 state, dead_info = one_step(subkey, state)
                 dead.append(dead_info)
                 pbar.update(len(dead_info.particles.loglikelihood))
+        jax.block_until_ready(state)
+        elapsed = time.perf_counter() - start
+        print(f"{kernel} kernel: {len(dead)} steps in {elapsed:.2f} s "
+              f"({elapsed / len(dead) * 1e3:.1f} ms/step)")
 
         return state, finalise(state, dead)
 
@@ -80,7 +114,7 @@ def sampler(logl, requirements, nlive, filename, rng_key, **kwargs):
     # Build prior dictionary
     prior_dict = {}
     labels = []
-    ns_kwargs = {}
+    ns_kwargs = {'kernel': kwargs.get('kernel', 'sync')}
     save_kwargs = {}
 
     for param in requirements:
