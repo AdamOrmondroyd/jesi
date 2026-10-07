@@ -37,8 +37,8 @@ wheels = [
 
 [[package]]
 name = "blackjax"
-version = "1.7.2.dev35+ged22847ff"
-source = { git = "https://github.com/AdamOrmondroyd/blackjax?branch=nealFSM#ed22847ffb4e92e39cef706768148aadf967331f" }
+version = "1.7.2.dev36+g0f0e7d010"
+source = { git = "https://github.com/AdamOrmondroyd/blackjax?branch=nealFSM#0f0e7d010dbdb4092f7fa141ebb0c6363f549480" }
 dependencies = [
     { name = "jax" },
     { name = "jaxlib" },
