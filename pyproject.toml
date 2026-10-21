@@ -2,10 +2,10 @@
 name = "jesi"
 dynamic = ["version"]
 description = "Dark Energy Jaxoscopic Instrument"
-requires-python = ">=3.10,<3.14"
+requires-python = ">=3.11,<3.14"
 dependencies = [
     "anesthetic>=2.10.0",
-    "blackjax",
+    "blackjax>=1.6.0",
     "tfp-nightly",
     "tqdm>=4.67.1",
     "fire",
@@ -23,10 +23,9 @@ jesi = [
 ]
 
 [project.optional-dependencies]
-cuda= ["jax[cuda]"]
-
-[tool.uv.sources]
-blackjax = { git = "https://github.com/handley-lab/blackjax" }
+cuda = ["jax[cuda]"]
+cuda12 = ["jax[cuda12]"]
+cuda13 = ["jax[cuda13]"]
 
 [build-system]
 requires = ["setuptools_scm>=8"]
