@@ -74,6 +74,17 @@ def save(final, filename, labels, flatten=None):
     return samples, final
 
 
+def sort_samples(samples):
+    i = jnp.argsort(samples['a'], axis=-1, descending=True)
+    samples['a'] = jnp.take_along_axis(samples['a'], i, -1)
+    samples['w'] = jnp.concatenate([
+        samples['w'][..., :1],
+        jnp.take_along_axis(samples['w'][..., 1:-1], i, -1),
+        samples['w'][..., -1:],
+    ], axis=-1)
+    return samples
+
+
 def sampler(logl, requirements, nlive, filename, rng_key, **kwargs):
     """Build a sampler with CPL constraint: w0 + wa < 0."""
 
@@ -147,6 +158,8 @@ def sampler(logl, requirements, nlive, filename, rng_key, **kwargs):
         mask = prior_samples['w0'] + prior_samples['wa'] < 0
         prior_samples = jax.tree.map(lambda x: x[mask], prior_samples)
         prior_samples = jax.tree.map(lambda x: x[:nlive], prior_samples)
+    elif flexknot:
+        prior_samples = sort_samples(prior_samples)
 
         def flatten(particles):
             data_dict = {}
@@ -154,7 +167,6 @@ def sampler(logl, requirements, nlive, filename, rng_key, **kwargs):
                 if key in ['a', 'w']:  # vector parameters
                     if key == 'a':
                         # a1, a2, a3, ... (skip a0 since it's fixed at 1)
-                        # values = stick_breaking(values)
                         for i in range(values.shape[1]):
                             data_dict[f'{key}{i+1}'] = values[:, i]
                     else:  # w
