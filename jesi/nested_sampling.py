@@ -146,7 +146,9 @@ def sampler(logl, requirements, nlive, filename, rng_key, **kwargs):
         if flexknot:
             def log_prior(x):
                 a = x['a']
-                return jnp.where(jnp.all(a[..., :-1] > a[..., 1:], axis=-1), prior_fn(x), -jnp.inf)
+                return jnp.where(jnp.all(a[..., :-1] > a[..., 1:], axis=-1),
+                                 prior_fn(x) + jax.scipy.special.gammaln(a.shape[-1] + 1),
+                                 -jnp.inf)
         else:
             log_prior = prior_fn
 
