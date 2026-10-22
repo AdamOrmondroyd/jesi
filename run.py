@@ -12,7 +12,6 @@ config.update("jax_enable_x64", False)
 print(f"JAX in {'64' if config.jax_enable_x64 else '32'}-bit mode")
 print(f"JAX platform: {os.environ.get('JAX_PLATFORM_NAME', 'default')}")
 
-rng_key = jax.random.PRNGKey(1729)
 os.makedirs("chains", exist_ok=True)
 
 
@@ -32,7 +31,8 @@ def determine_requirements(model, logls):
     return requirements
 
 
-def main(model_name, *likelihood_names, nlive=1000, **kwargs):
+def main(model_name, *likelihood_names, nlive=1000, seed=1729, **kwargs):
+    rng_key = jax.random.PRNGKey(seed)
     model = getattr(cosmology, model_name)
     logls = [getattr(likelihoods, name) for name in likelihood_names]
     requirements = determine_requirements(model, logls)
