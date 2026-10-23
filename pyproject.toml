@@ -6,9 +6,11 @@ requires-python = ">=3.10"
 dependencies = [
     "anesthetic>=2.10.0",
     "blackjax",
+    "jax<0.7.0",
     "tensorflow-probability>=0.25.0",
     "tqdm>=4.67.1",
     "fire",
+    "smplotlib",
 ]
 
 [tool.setuptools.packages.find]
