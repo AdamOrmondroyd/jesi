@@ -106,13 +106,13 @@ class IaLogLUnmarginalised(IaLogL):
         # of the inverse of the cholesky
         if invcov is not None:
             cholesky_LT = np.linalg.cholesky(invcov).T
-            sign, logdet = np.linalg.slogdet(invcov)
+            _sign, logdet = np.linalg.slogdet(invcov)
             logdet = -logdet
         else:
             cholesky_LT = array(np.linalg.inv(
                 np.linalg.cholesky(cov)
             ))
-            sign, logdet = np.linalg.slogdet(cov)
+            _sign, logdet = np.linalg.slogdet(cov)
 
         lognormalisation = -0.5 * (
             logdet
