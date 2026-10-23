@@ -9,13 +9,13 @@ from tensorflow_probability.substrates.jax import distributions as tfd
 
 # Parameter registry - central definition of all priors and labels
 PARAMETER_REGISTRY = {
-    'h0rd': {'prior': tfd.Uniform(3_650.0, 18_250.0), 'label': r'H_0r_\mathrm{d}'},
-    'h0': {'prior': tfd.Uniform(20.0, 100.0), 'label': r'H_0'},
-    'omegam': {'prior': tfd.Uniform(0.01, 0.99), 'label': r'\Omega_\mathrm{m}'},
-    'w0': {'prior': tfd.Uniform(-3.0, 1.0), 'label': r'w_0'},
-    'wa': {'prior': tfd.Uniform(-3.0, 2.0), 'label': r'w_a'},
-    'Mb': {'prior': tfd.Uniform(-25.0, -15.0), 'label': r'M_\mathrm{B}'},
-    'delta_mb': {'prior': tfd.Uniform(-0.1, 0.1), 'label': r'\Delta m_\mathrm{B}'},
+    'h0rd': (tfd.Uniform(3_650.0, 18_250.0), r'H_0r_\mathrm{d}'),
+    'h0': (tfd.Uniform(20.0, 100.0), r'H_0'),
+    'omegam': (tfd.Uniform(0.01, 0.99), r'\Omega_\mathrm{m}'),
+    'w0': (tfd.Uniform(-3.0, 1.0), r'w_0'),
+    'wa': (tfd.Uniform(-3.0, 2.0), r'w_a'),
+    'Mb': (tfd.Uniform(-25.0, -15.0), r'M_\mathrm{B}'),
+    'delta_mb': (tfd.Uniform(-0.1, 0.1), r'\Delta m_\mathrm{B}'),
 }
 
 
@@ -106,8 +106,9 @@ def sampler(logl, requirements, nlive, filename, rng_key, **kwargs):
             if n >= 2:
                 labels += [('wn-1', r'w_{n-1}')]
         else:
-            prior_dict[param] = PARAMETER_REGISTRY[param]['prior']
-            labels.append((param, PARAMETER_REGISTRY[param]['label']))
+            prior, label = PARAMETER_REGISTRY[param]
+            prior_dict[param] = prior
+            labels.append((param, label))
 
     # Create cuboid prior (before applying constraint)
     cuboid_prior = tfd.JointDistributionNamed(prior_dict)
