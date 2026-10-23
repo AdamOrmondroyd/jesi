@@ -9,10 +9,11 @@ c = c/1000
 
 @wraps(partial)
 def partial_with_requirements(f, *args, **kwargs):
-    requirements = f.requirements.copy()
-    f = partial(f, *args, **kwargs)
-    f.requirements = requirements
-    return f
+    g = partial(f, *args, **kwargs)
+    g.requirements = f.requirements | {
+        r for a in args for r in getattr(a, 'requirements', ())
+    }
+    return g
 
 
 @jax.jit
