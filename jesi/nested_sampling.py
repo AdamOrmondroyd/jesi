@@ -102,7 +102,7 @@ def sampler(logl, requirements, nlive, filename, rng_key, **kwargs):
         elif param == 'w':
             n = kwargs['n']
             prior_dict[param] = tfd.Uniform(jnp.full(n, -3.0), jnp.full(n, 1.0))
-            labels += [(f'w{i}', f'w_{{{i}}}') for i in range(0, n-1)]
+            labels += [(f'w{i}', f'w_{{{i}}}') for i in range(n-1)]
             if n >= 2:
                 labels += [('wn-1', r'w_{n-1}')]
         else:
