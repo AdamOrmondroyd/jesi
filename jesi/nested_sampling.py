@@ -86,7 +86,7 @@ def sort_samples(samples):
 
 
 def sampler(logl, requirements, nlive, filename, rng_key, **kwargs):
-    """Build a sampler with CPL constraint: w0 + wa < 0."""
+    """Build a sampler with CPL constraint w0 + wa < 0, or flexknot sorting."""
 
     # Build prior dictionary
     prior_dict = {}
@@ -152,7 +152,7 @@ def sampler(logl, requirements, nlive, filename, rng_key, **kwargs):
         else:
             log_prior = prior_fn
 
-    # Rejection sampling for initial points
+    # Initial points: rejection sample for CPL, sort for flexknot
     rng_key, init_key = jax.random.split(rng_key, 2)
     prior_samples = cuboid_prior.sample(seed=init_key, sample_shape=(nprior,))
 
