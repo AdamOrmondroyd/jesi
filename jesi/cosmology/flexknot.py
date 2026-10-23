@@ -29,7 +29,7 @@ def integrate_cpl(ai, ai1, wi, wi1, alower=None):
 
 
 def sections(a, w):
-    # compute all but the last part of ∫1+w/1+zdz, and preemtively cumsum
+    # compute all but the last part of ∫1+w/1+zdz, and preemptively cumsum
     # Never need the last section precomputed as would need z=infinity
     # a, w are 1D arrays
     a = concatenate([ones(1, dtype=a.dtype), a, zeros(1, dtype=a.dtype)])
