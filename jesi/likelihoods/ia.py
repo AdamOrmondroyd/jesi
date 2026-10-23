@@ -9,7 +9,7 @@ c = c / 1000.0
 
 
 class IaLogL:
-    requirements = {'h0_dl_over_c'}
+    requirements = frozenset({'h0_dl_over_c'})
 
     def __init__(self, df, cov, mb_column, invcov=None, z_cutoff=0.0):
 
@@ -87,7 +87,7 @@ class IaLogL:
 
 
 class IaLogLUnmarginalised(IaLogL):
-    requirements = {'h0_dl_over_c', 'h0', 'Mb'}
+    requirements = IaLogL.requirements | {'h0', 'Mb'}
 
     def __init__(self, df, cov, mb_column, invcov=None, z_cutoff=0.0):
         if mb_column == 'MU':
@@ -97,7 +97,7 @@ class IaLogLUnmarginalised(IaLogL):
                 "To recover the same result as the marginalised likelihood, "
                 "use a 1/H0 prior."
             )
-        return super().__init__(df, cov, mb_column, invcov, z_cutoff)
+        super().__init__(df, cov, mb_column, invcov, z_cutoff)
 
     def _compute_cholesky_and_lognorm(self, cov, invcov=None):
 
@@ -106,13 +106,13 @@ class IaLogLUnmarginalised(IaLogL):
         # of the inverse of the cholesky
         if invcov is not None:
             cholesky_LT = np.linalg.cholesky(invcov).T
-            sign, logdet = np.linalg.slogdet(invcov)
+            _sign, logdet = np.linalg.slogdet(invcov)
             logdet = -logdet
         else:
             cholesky_LT = array(np.linalg.inv(
                 np.linalg.cholesky(cov)
             ))
-            sign, logdet = np.linalg.slogdet(cov)
+            _sign, logdet = np.linalg.slogdet(cov)
 
         lognormalisation = -0.5 * (
             logdet
@@ -135,7 +135,7 @@ class IaLogLUnmarginalised(IaLogL):
 
 
 class GeorgeIaLogL(IaLogL):
-    requirements = {'h0_dl_over_c', 'delta_mb'}
+    requirements = IaLogL.requirements | {'delta_mb'}
 
     def __init__(self, george_mask, *args, **kwargs):
         self.george_mask = array(george_mask.to_numpy())

@@ -2,17 +2,9 @@ import jax
 from jax.lax import rsqrt
 from jax.numpy import concatenate, diff, zeros_like, linspace, trapezoid
 from scipy.constants import c
-from functools import partial, wraps
+from jesi.requirements import requires
 
 c = c/1000
-
-
-@wraps(partial)
-def partial_with_requirements(f, *args, **kwargs):
-    requirements = f.requirements.copy()
-    f = partial(f, *args, **kwargs)
-    f.requirements = requirements
-    return f
 
 
 @jax.jit
@@ -22,6 +14,7 @@ def cumulative_trapezoid(y, x):
     return concatenate([zeros_like(y[..., :1]), t.cumsum(axis=-1)], axis=-1)
 
 
+@requires('omegam')
 def one_over_h(f_de, z, params):
     """
     1/(H(z) / H0)
@@ -43,10 +36,12 @@ def int_one_over_h(one_over_h, z, params, resolution=1000):
     return trapezoid(_one_over_h, _z, axis=0)
 
 
+@requires('h0rd')
 def dh_over_rs(one_over_h, z, params):
     return c / params['h0rd'] * one_over_h(z, params)
 
 
+@requires('h0rd')
 def dm_over_rs(int_one_over_h, z, params, resolution=1000):
     return c / params['h0rd'] * int_one_over_h(z, params,
                                                resolution=resolution)
@@ -65,10 +60,3 @@ def h0_dl_over_c(one_over_h, int_one_over_h, zhd, zhel, params):
     h_inverse = one_over_h(zhd, params)
     q = cumulative_trapezoid(h_inverse, zhd) + q0
     return (1 + zhel) * q
-
-
-for f in (one_over_h, int_one_over_h, h0_dl_over_c):
-    f.requirements = {'omegam'}
-
-for f in dh_over_rs, dm_over_rs, dv_over_rs:
-    f.requirements = {'omegam', 'h0rd'}

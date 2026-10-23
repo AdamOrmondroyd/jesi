@@ -5,8 +5,8 @@ from jesi.cosmology.cosmology import (
     dm_over_rs,
     dv_over_rs,
     h0_dl_over_c,
-    partial_with_requirements as partial,
 )
+from jesi.requirements import partial
 
 
 def f_de(z, params): return 1.0

@@ -32,3 +32,6 @@ requires = ["setuptools_scm>=8"]
 
 [tool.setuptools_scm]
 version_file = "jesi/_version.py"
+
+[tool.ruff.lint]
+ignore = ["I001", "RUF022"]

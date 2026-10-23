@@ -2,7 +2,6 @@ import os
 from jax import config
 from pathlib import Path
 from fire import Fire
-from functools import partial
 import jax
 from jesi import cosmology
 from jesi import likelihoods
@@ -20,7 +19,7 @@ def determine_requirements(model, logls):
     for logl in logls:
         logl_requirements |= logl.requirements
     print(f"{logl_requirements=}")
-    # if requirement is a cosmolgy function, replace requirement
+    # if requirement is a cosmology function, replace requirement
     requirements = set()
     for req in logl_requirements:
         if hasattr(model, req):
@@ -37,10 +36,8 @@ def main(model_name, *likelihood_names, nlive=1000, seed=1729, **kwargs):
     logls = [getattr(likelihoods, name) for name in likelihood_names]
     requirements = determine_requirements(model, logls)
 
-    def logl(x, model, logls):
+    def logl(x):
         return sum(logl(x, model) for logl in logls)
-
-    logl = partial(logl, model=model, logls=logls)
 
     root = "_".join(likelihood_names)
     kwargs_str = "_".join(f"{k}={v}" for k, v in kwargs.items())

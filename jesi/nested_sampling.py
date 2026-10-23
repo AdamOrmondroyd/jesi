@@ -9,17 +9,17 @@ from tensorflow_probability.substrates.jax import distributions as tfd
 
 # Parameter registry - central definition of all priors and labels
 PARAMETER_REGISTRY = {
-    'h0rd': {'prior': tfd.Uniform(3_650.0, 18_250.0), 'label': r'H_0r_\mathrm{d}'},
-    'h0': {'prior': tfd.Uniform(20.0, 100.0), 'label': r'H_0'},
-    'omegam': {'prior': tfd.Uniform(0.01, 0.99), 'label': r'\Omega_\mathrm{m}'},
-    'w0': {'prior': tfd.Uniform(-3.0, 1.0), 'label': r'w_0'},
-    'wa': {'prior': tfd.Uniform(-3.0, 2.0), 'label': r'w_a'},
-    'Mb': {'prior': tfd.Uniform(-25.0, -15.0), 'label': r'M_\mathrm{B}'},
-    'delta_mb': {'prior': tfd.Uniform(-0.1, 0.1), 'label': r'\Delta m_\mathrm{B}'},
+    'h0rd': (tfd.Uniform(3_650.0, 18_250.0), r'H_0r_\mathrm{d}'),
+    'h0': (tfd.Uniform(20.0, 100.0), r'H_0'),
+    'omegam': (tfd.Uniform(0.01, 0.99), r'\Omega_\mathrm{m}'),
+    'w0': (tfd.Uniform(-3.0, 1.0), r'w_0'),
+    'wa': (tfd.Uniform(-3.0, 2.0), r'w_a'),
+    'Mb': (tfd.Uniform(-25.0, -15.0), r'M_\mathrm{B}'),
+    'delta_mb': (tfd.Uniform(-0.1, 0.1), r'\Delta m_\mathrm{B}'),
 }
 
 
-def nested_sampling(log_likelihood, log_prior, logl_samples, prior_samples,
+def nested_sampling(log_likelihood, log_prior, prior_samples,
                     nlive, labels, rng_key, **nss_kwargs):
     """Core nested sampling function - unchanged from original."""
     n_delete = nlive // 2
@@ -102,12 +102,13 @@ def sampler(logl, requirements, nlive, filename, rng_key, **kwargs):
         elif param == 'w':
             n = kwargs['n']
             prior_dict[param] = tfd.Uniform(jnp.full(n, -3.0), jnp.full(n, 1.0))
-            labels += [(f'w{i}', f'w_{{{i}}}') for i in range(0, n-1)]
+            labels += [(f'w{i}', f'w_{{{i}}}') for i in range(n-1)]
             if n >= 2:
                 labels += [('wn-1', r'w_{n-1}')]
         else:
-            prior_dict[param] = PARAMETER_REGISTRY[param]['prior']
-            labels.append((param, PARAMETER_REGISTRY[param]['label']))
+            prior, label = PARAMETER_REGISTRY[param]
+            prior_dict[param] = prior
+            labels.append((param, label))
 
     # Create cuboid prior (before applying constraint)
     cuboid_prior = tfd.JointDistributionNamed(prior_dict)
@@ -185,12 +186,10 @@ def sampler(logl, requirements, nlive, filename, rng_key, **kwargs):
 
     if jax.config.jax_enable_x64:
         prior_samples = jax.tree.map(lambda x: jnp.asarray(x, dtype=jnp.float64), prior_samples)
-    # Evaluate initial likelihoods
-    logl_samples = jax.vmap(logl)(prior_samples)
 
     # Run nested sampling with constrained prior
     final = nested_sampling(
-        logl, log_prior, logl_samples,
+        logl, log_prior,
         prior_samples, nlive, labels, rng_key,
         **ns_kwargs,
     )
