@@ -30,8 +30,8 @@ class IaLogL:
         cov_np = np.array(cov, dtype=np.float64)
         one_np = np.ones((len(cov_np), 1), dtype=np.float64)
 
-        # Compute constrained inverse C^-1_tilde for marginalization
-        # This marginalizes out nuisance parameters (H0, absolute magnitude)
+        # Compute constrained inverse C^-1_tilde for marginalisation
+        # This marginalises out nuisance parameters (H0, absolute magnitude)
         invcov_np = np.linalg.inv(cov_np) if invcov is None else np.array(invcov, dtype=np.float64)
 
         if invcov is not None:
@@ -65,7 +65,7 @@ class IaLogL:
             raise ValueError("Covariance matrix must be positive definite.")
         lognorm = -0.5 * (
             logdet                           # log|C|
-            + np.log(2*np.pi) * (len(cov_np) - 1)  # log(2π)^(n-1) after marginalization
+            + np.log(2*np.pi) * (len(cov_np) - 1)  # log(2π)^(n-1) after marginalisation
             + np.log(one_T_invcov_one.item())       # log(1^T C^-1 1)
         )
         if not config.jax_enable_x64:
