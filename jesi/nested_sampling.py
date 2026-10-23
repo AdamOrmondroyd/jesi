@@ -19,7 +19,7 @@ PARAMETER_REGISTRY = {
 }
 
 
-def nested_sampling(log_likelihood, log_prior, logl_samples, prior_samples,
+def nested_sampling(log_likelihood, log_prior, prior_samples,
                     nlive, labels, rng_key, **nss_kwargs):
     """Core nested sampling function - unchanged from original."""
     n_delete = nlive // 2
