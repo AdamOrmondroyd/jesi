@@ -5,16 +5,15 @@ from jesi.cosmology.cosmology import (
     dm_over_rs,
     dv_over_rs,
     h0_dl_over_c,
+    requires,
     partial_with_requirements as partial,
 )
 
 
+@requires('w0')
 def f_de(z, params):
     w0 = params['w0']
     return (1+z)**(3*(1+w0))
-
-
-f_de.requirements = {'w0'}
 
 
 one_over_h = partial(one_over_h, f_de)

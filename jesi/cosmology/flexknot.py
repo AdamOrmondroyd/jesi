@@ -15,6 +15,7 @@ from jesi.cosmology.cosmology import (
     dm_over_rs,
     dv_over_rs,
     h0_dl_over_c,
+    requires,
     partial_with_requirements as partial,
 )
 
@@ -40,6 +41,7 @@ def sections(a, w):
     return a, sections
 
 
+@requires('a', 'w')
 def f_de(z, params):
     a, w = params['a'], params['w']
     a, _sections = sections(a, w)
@@ -51,9 +53,6 @@ def f_de(z, params):
     wi1 = w[i+1]
     section = _sections[i]
     return exp(3*(section + integrate_cpl(ai, ai1, wi, wi1, alower)))
-
-
-f_de.requirements = {'a', 'w'}
 
 
 one_over_h = partial(one_over_h, f_de)
