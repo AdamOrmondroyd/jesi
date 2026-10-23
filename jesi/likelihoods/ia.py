@@ -64,9 +64,9 @@ class IaLogL:
         if sign != 1:
             raise ValueError("Covariance matrix must be positive definite.")
         lognorm = -0.5 * (
-            logdet                           # log|C|
+            logdet                                 # log|C|
             + np.log(2*np.pi) * (len(cov_np) - 1)  # log(2π)^(n-1) after marginalisation
-            + np.log(one_T_invcov_one.item())       # log(1^T C^-1 1)
+            + np.log(one_T_invcov_one.item())      # log(1^T C^-1 1)
         )
         if not config.jax_enable_x64:
             lognorm = float32(lognorm)
