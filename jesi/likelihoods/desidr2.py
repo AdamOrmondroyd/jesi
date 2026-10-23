@@ -1,3 +1,4 @@
+from jesi.requirements import requires
 from pathlib import Path
 import numpy as np
 import jax.numpy as jnp
@@ -17,6 +18,7 @@ lognorm = -jnp.linalg.slogdet(2*jnp.pi*cov)[1] / 2
 di_over_rs_names = data.iloc[:, 2].str.lower().tolist()
 
 
+@requires(*di_over_rs_names)
 def logl(params, cosmology):
     di_over_rss = [getattr(cosmology, name) for name in di_over_rs_names]
 
@@ -27,7 +29,3 @@ def logl(params, cosmology):
 
     v = lT @ (x - mean)
     return - (v * v).sum() / 2 + lognorm
-
-
-# Assign requirements as function attribute
-logl.requirements = {i.lower() for i in data.iloc[:, 2]}

@@ -1,4 +1,5 @@
 from jax.numpy import exp
+from jesi.requirements import partial
 from jesi.cosmology.cosmology import (
     one_over_h,
     int_one_over_h,
@@ -7,7 +8,6 @@ from jesi.cosmology.cosmology import (
     dv_over_rs,
     h0_dl_over_c,
     requires,
-    partial_with_requirements as partial,
 )
 
 

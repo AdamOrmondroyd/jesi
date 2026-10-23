@@ -2,24 +2,9 @@ import jax
 from jax.lax import rsqrt
 from jax.numpy import concatenate, diff, zeros_like, linspace, trapezoid
 from scipy.constants import c
-from functools import partial, wraps
+from jesi.requirements import requires
 
 c = c/1000
-
-
-def requires(*requirements):
-    def decorator(f):
-        f.requirements = set(requirements)
-        return f
-    return decorator
-
-
-@wraps(partial)
-def partial_with_requirements(f, *args, **kwargs):
-    requirements = getattr(f, 'requirements', set()) | {
-        r for a in args for r in getattr(a, 'requirements', set())
-    }
-    return requires(*requirements)(partial(f, *args, **kwargs))
 
 
 @jax.jit

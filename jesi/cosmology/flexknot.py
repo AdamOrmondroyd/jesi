@@ -16,8 +16,8 @@ from jesi.cosmology.cosmology import (
     dv_over_rs,
     h0_dl_over_c,
     requires,
-    partial_with_requirements as partial,
 )
+from jesi.requirements import partial
 
 
 def integrate_cpl(ai, ai1, wi, wi1, alower=None):
