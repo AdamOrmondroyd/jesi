@@ -20,7 +20,7 @@ def determine_requirements(model, logls):
     for logl in logls:
         logl_requirements |= logl.requirements
     print(f"{logl_requirements=}")
-    # if requirement is a cosmolgy function, replace requirement
+    # if requirement is a cosmology function, replace requirement
     requirements = set()
     for req in logl_requirements:
         if hasattr(model, req):
