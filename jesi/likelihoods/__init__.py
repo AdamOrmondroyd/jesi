@@ -1,13 +1,13 @@
-from jesi.likelihoods.desidr2 import logl as desidr2
-from jesi.likelihoods.pantheonplus import (
+from .desidr2 import logl as desidr2
+from .pantheonplus import (
     logl as pantheonplus,
     loglunmarginalised as pantheonplusunmarginalised,
 )
-from jesi.likelihoods.des5y import (
+from .des5y import (
     logl as des5y,
     logloffset as des5yoffset,
 )
-from jesi.likelihoods.dovekie import (
+from .dovekie import (
     logl as dovekie,
     logloffset as dovekieoffset,
 )
