@@ -185,12 +185,10 @@ def sampler(logl, requirements, nlive, filename, rng_key, **kwargs):
 
     if jax.config.jax_enable_x64:
         prior_samples = jax.tree.map(lambda x: jnp.asarray(x, dtype=jnp.float64), prior_samples)
-    # Evaluate initial likelihoods
-    logl_samples = jax.vmap(logl)(prior_samples)
 
     # Run nested sampling with constrained prior
     final = nested_sampling(
-        logl, log_prior, logl_samples,
+        logl, log_prior,
         prior_samples, nlive, labels, rng_key,
         **ns_kwargs,
     )
