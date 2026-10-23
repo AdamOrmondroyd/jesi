@@ -3,7 +3,7 @@ import functools
 
 def requires(*requirements):
     def decorator(f):
-        f.requirements = set(requirements)
+        f.requirements = frozenset(requirements)
         return f
     return decorator
 
