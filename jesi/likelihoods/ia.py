@@ -97,7 +97,7 @@ class IaLogLUnmarginalised(IaLogL):
                 "To recover the same result as the marginalised likelihood, "
                 "use a 1/H0 prior."
             )
-        return super().__init__(df, cov, mb_column, invcov, z_cutoff)
+        super().__init__(df, cov, mb_column, invcov, z_cutoff)
 
     def _compute_cholesky_and_lognorm(self, cov, invcov=None):
 
