@@ -30,4 +30,4 @@ def logl(params, cosmology):
 
 
 # Assign requirements as function attribute
-logl.requirements = set(i.lower() for i in data.iloc[:, 2])
+logl.requirements = {i.lower() for i in data.iloc[:, 2]}
