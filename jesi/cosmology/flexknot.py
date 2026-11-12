@@ -26,19 +26,6 @@ def integrate_cpl(ai, ai1, wi, wi1, alower=None):
     return oneplusc * log(ai/alower) + m * (ai - alower)
 
 
-def sections(a, w):
-    # compute all but the last part of ∫1+w/1+zdz, and preemptively cumsum
-    # Never need the last section precomputed as would need z=infinity
-    # a, w are 1D arrays
-    a = concatenate([ones(1, dtype=a.dtype), a, zeros(1, dtype=a.dtype)])
-    sections = integrate_cpl(a[:-2], a[1:-1], w[:-2], w[1:-1])
-    # helpful to have zero at the beginning to handle
-    # being in the zeroth flexknot section
-    sections = sections.cumsum(axis=0)
-    sections = concatenate([zeros(1), sections])
-    return a, sections
-
-
 @requires('a', 'w')
 def f_de(z, params):
     a = concatenate([ones(1), params['a'], zeros(1)])
