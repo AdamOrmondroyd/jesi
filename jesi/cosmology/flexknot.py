@@ -6,7 +6,7 @@ from jax.numpy import (
     zeros,
     concatenate,
     argmin,
-    where,
+    where, clip,
 )
 from jesi.cosmology.cosmology import (
     one_over_h,
@@ -43,16 +43,11 @@ def sections(a, w):
 
 @requires('a', 'w')
 def f_de(z, params):
-    a, w = params['a'], params['w']
-    a, _sections = sections(a, w)
+    a = concatenate([ones(1), params['a'], zeros(1)])
+    w = params['w']
     alower = 1/(1+z)
-    i = argmin(where(a > alower[..., None], a, inf), axis=-1)
-    ai = a[i]
-    ai1 = a[i+1]
-    wi = w[i]
-    wi1 = w[i+1]
-    section = _sections[i]
-    return exp(3*(section + integrate_cpl(ai, ai1, wi, wi1, alower)))
+    lo = clip(alower[..., None], a[1:], a[:-1])
+    return exp(3*integrate_cpl(a[:-1], a[1:], w[:-1], w[1:], lo).sum(axis=-1))
 
 
 one_over_h = partial(one_over_h, f_de)
