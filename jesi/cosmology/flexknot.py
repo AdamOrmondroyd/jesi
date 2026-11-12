@@ -1,12 +1,10 @@
 from jax.numpy import (
     exp,
     log,
-    inf,
     ones,
     zeros,
     concatenate,
-    argmin,
-    where, clip,
+    clip,
 )
 from jesi.cosmology.cosmology import (
     one_over_h,
