@@ -1,6 +1,7 @@
 from jax.numpy import (
     exp,
     log,
+    log1p,
     ones,
     zeros,
     concatenate,
@@ -18,21 +19,21 @@ from jesi.cosmology.cosmology import (
 from jesi.requirements import partial
 
 
-def integrate_cpl(ai, ai1, wi, wi1, alower=None):
+def integrate_cpl(ai, ai1, wi, wi1, alower, log_ai_over_alower):
     m = (wi - wi1) / (ai - ai1)
     oneplusc = wi - m * ai + 1
-    if alower is None:
-        alower = ai1
-    return oneplusc * log(ai/alower) + m * (ai - alower)
+    return oneplusc * log_ai_over_alower + m * (ai - alower)
 
 
 @requires('a', 'w')
 def f_de(z, params):
     a = concatenate([ones(1), params['a'], zeros(1)])
     w = params['w']
-    alower = 1/(1+z)
-    lo = clip(alower[..., None], a[1:], a[:-1])
-    return exp(3*integrate_cpl(a[:-1], a[1:], w[:-1], w[1:], lo).sum(axis=-1))
+    loga = log(a)
+    lo = clip(1/(1+z)[..., None], a[1:], a[:-1])
+    loglo = clip(-log1p(z)[..., None], loga[1:], loga[:-1])
+    return exp(3*integrate_cpl(a[:-1], a[1:], w[:-1], w[1:],
+                               lo, loga[:-1] - loglo).sum(axis=-1))
 
 
 one_over_h = partial(one_over_h, f_de)
