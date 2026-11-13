@@ -1,12 +1,11 @@
 from jax.numpy import (
     exp,
     log,
-    inf,
+    log1p,
     ones,
     zeros,
     concatenate,
-    argmin,
-    where,
+    clip,
 )
 from jesi.cosmology.cosmology import (
     one_over_h,
@@ -20,39 +19,21 @@ from jesi.cosmology.cosmology import (
 from jesi.requirements import partial
 
 
-def integrate_cpl(ai, ai1, wi, wi1, alower=None):
+def integrate_cpl(ai, ai1, wi, wi1, alower, log_ai_over_alower):
     m = (wi - wi1) / (ai - ai1)
     oneplusc = wi - m * ai + 1
-    if alower is None:
-        alower = ai1
-    return oneplusc * log(ai/alower) + m * (ai - alower)
-
-
-def sections(a, w):
-    # compute all but the last part of ∫1+w/1+zdz, and preemptively cumsum
-    # Never need the last section precomputed as would need z=infinity
-    # a, w are 1D arrays
-    a = concatenate([ones(1, dtype=a.dtype), a, zeros(1, dtype=a.dtype)])
-    sections = integrate_cpl(a[:-2], a[1:-1], w[:-2], w[1:-1])
-    # helpful to have zero at the beginning to handle
-    # being in the zeroth flexknot section
-    sections = sections.cumsum(axis=0)
-    sections = concatenate([zeros(1), sections])
-    return a, sections
+    return oneplusc * log_ai_over_alower + m * (ai - alower)
 
 
 @requires('a', 'w')
 def f_de(z, params):
-    a, w = params['a'], params['w']
-    a, _sections = sections(a, w)
-    alower = 1/(1+z)
-    i = argmin(where(a > alower[..., None], a, inf), axis=-1)
-    ai = a[i]
-    ai1 = a[i+1]
-    wi = w[i]
-    wi1 = w[i+1]
-    section = _sections[i]
-    return exp(3*(section + integrate_cpl(ai, ai1, wi, wi1, alower)))
+    a = concatenate([ones(1), params['a'], zeros(1)])
+    w = params['w']
+    loga = log(a)
+    lo = clip(1/(1+z)[..., None], a[1:], a[:-1])
+    loglo = clip(-log1p(z)[..., None], loga[1:], loga[:-1])
+    return exp(3*integrate_cpl(a[:-1], a[1:], w[:-1], w[1:],
+                               lo, loga[:-1] - loglo).sum(axis=-1))
 
 
 one_over_h = partial(one_over_h, f_de)
