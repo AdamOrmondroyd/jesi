@@ -3,6 +3,7 @@ import jax
 import blackjax
 from tqdm import tqdm
 import anesthetic
+import janesthetic
 from blackjax.ns.utils import finalise
 from tensorflow_probability.substrates.jax import distributions as tfd
 
@@ -59,6 +60,7 @@ def save(final, filename, labels, flatten=None):
         particles = final.particles.position
 
     labels_map = {label[0]: f'${label[1]}$' for label in labels}
+    jamples = janesthetic.sort(final)
 
     samples = anesthetic.NestedSamples(
         data=particles,
@@ -68,8 +70,8 @@ def save(final, filename, labels, flatten=None):
         labels=labels_map,
     )
 
-    print(f"anesthetic logZ = {samples.logZ():.2f} "
-          f"= {samples.logL_P():.2f} - {samples.D_KL():.2f}")
+    print(f"janesthetic.logZ = {jamples.logZ():.2f} "
+          f"= {jamples.logL_P():.2f} - {jamples.D_KL():.2f}")
     samples.to_csv(f"{filename}.csv")
     return samples, final
 
